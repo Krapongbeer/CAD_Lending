@@ -515,58 +515,85 @@
     <script>
         const SUPABASE_URL = "https://undafgcijvuhvdmyjatk.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn";
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz4eoX91Wfe0Op7hi3fhSYWCcbA0I_rNeS_bY7Op73pEaCI6s6t6AwJubFL_alluZwZzg/exec";
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzZSMyE0jsyQtE6cfoUc6gWMyIRbQrt9MySO2Vtp-6fEwlA2mjl-W8FS6v6hBKyy-qVgw/exec";
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const API_HEADERS = {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json"
+        };
 
         let cacheAssets = [];
         let cacheBorrowings = [];
         let cacheHandoff = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             applyThemeUI();
             loadAllData();
-            setupRealtimeSubscriptions();
+            // Auto refresh every 5 seconds for live updates
+            setInterval(loadAllData, 5000);
         });
 
-        // Load all data from Supabase
+        // Load all data from Supabase REST API directly
         async function loadAllData() {
-            await Promise.all([
-                loadAssets(),
-                loadActiveBorrowings(),
-                loadHandoffAssets()
-            ]);
-            updateKPIs();
+            try {
+                await Promise.all([
+                    loadAssets(),
+                    loadActiveBorrowings(),
+                    loadHandoffAssets()
+                ]);
+                updateKPIs();
+            } catch (err) {
+                console.error("Error loading data:", err);
+            }
         }
 
         // 1. Fetch Assets
         async function loadAssets() {
-            const { data, error } = await supabase.from('assets').select('*').order('created_at', { ascending: false });
-            if (!error && data) {
-                cacheAssets = data;
-                renderAssetsTable(data);
-                document.getElementById('badge-nav-assets').innerText = data.length;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/assets?select=*&order=created_at.desc`, { headers: API_HEADERS });
+                if (res.ok) {
+                    const data = await res.json();
+                    cacheAssets = data;
+                    renderAssetsTable(data);
+                    const badge = document.getElementById('badge-nav-assets');
+                    if (badge) badge.innerText = data.length;
+                }
+            } catch(e) {
+                console.error("loadAssets error:", e);
             }
         }
 
         // 2. Fetch Active Borrowings
         async function loadActiveBorrowings() {
-            const { data, error } = await supabase.from('view_active_borrowings').select('*');
-            if (!error && data) {
-                cacheBorrowings = data;
-                renderBorrowingsTable(data);
-                document.getElementById('badge-nav-borrowings').innerText = data.length;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/view_active_borrowings?select=*`, { headers: API_HEADERS });
+                if (res.ok) {
+                    const data = await res.json();
+                    cacheBorrowings = data;
+                    renderBorrowingsTable(data);
+                    const badge = document.getElementById('badge-nav-borrowings');
+                    if (badge) badge.innerText = data.length;
+                }
+            } catch(e) {
+                console.error("loadActiveBorrowings error:", e);
             }
         }
 
         // 3. Fetch CAD-Inventory Handoff View
         async function loadHandoffAssets() {
-            const { data, error } = await supabase.from('view_assets_ready_for_cad_inventory').select('*');
-            if (!error && data) {
-                cacheHandoff = data;
-                renderHandoffTable(data);
-                document.getElementById('badge-nav-handoff').innerText = data.length;
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/view_assets_ready_for_cad_inventory?select=*`, { headers: API_HEADERS });
+                if (res.ok) {
+                    const data = await res.json();
+                    cacheHandoff = data;
+                    renderHandoffTable(data);
+                    const badge = document.getElementById('badge-nav-handoff');
+                    if (badge) badge.innerText = data.length;
+                }
+            } catch(e) {
+                console.error("loadHandoffAssets error:", e);
             }
         }
 
@@ -711,21 +738,21 @@
             XLSX.writeFile(wb, `CAD_Inventory_Import_${today}.xlsx`);
         }
 
-        // Realtime Supabase Subscriptions
+        // Realtime Subscriptions (Safe wrapper)
         function setupRealtimeSubscriptions() {
-            supabase
-                .channel('public:lending_assets')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, () => {
-                    loadAllData();
-                })
-                .subscribe();
-
-            supabase
-                .channel('public:lending_transactions')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'borrow_transactions' }, () => {
-                    loadAllData();
-                })
-                .subscribe();
+            try {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    client.channel('public:lending_assets')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, () => loadAllData())
+                        .subscribe();
+                    client.channel('public:lending_transactions')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'borrow_transactions' }, () => loadAllData())
+                        .subscribe();
+                }
+            } catch (err) {
+                console.log("Realtime subscription fallback to polling:", err);
+            }
         }
 
         // View Navigation Switcher
