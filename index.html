@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartCAD-Lending | ระบบบริหารจัดการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ กองบริหารงานกลาง มช.</title>
+    
+    <!-- Inline Theme Initializer (Default: Auto) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem("cad_lending_theme") || "auto";
+            let isDark = false;
+            if (savedTheme === "dark") {
+                isDark = true;
+            } else if (savedTheme === "light") {
+                isDark = false;
+            } else {
+                isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            }
+            if (isDark) {
+                document.documentElement.classList.add("dark");
+            } else {
+                document.documentElement.classList.remove("dark");
+            }
+        })();
+    </script>
+
+    <!-- Google Fonts: Sarabun & Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        // CMU Signature Purple Palette & Pastel Tones
+                        cmu: {
+                            50: "#FAF5FF",
+                            100: "#F3E8FF",
+                            200: "#E9D5FF",
+                            300: "#D8B4FE",
+                            400: "#C084FC",
+                            500: "#A855F7",
+                            600: "#9333EA",
+                            700: "#7E22CE",
+                            800: "#6B21A8", // Official CMU Purple
+                            900: "#581C87",
+                            950: "#2E0854",
+                        },
+                        // CMU Gold / Amber Accents
+                        cmugold: {
+                            50: "#FFFBEB",
+                            100: "#FEF3C7",
+                            200: "#FDE68A",
+                            300: "#FCD34D",
+                            400: "#FBBF24",
+                            500: "#F59E0B", // CMU Lanna Gold
+                            600: "#D97706",
+                        },
+                        pastel: {
+                            purple: "#E9D5FF",
+                            gold: "#FEF3C7",
+                            mint: "#D1FAE5",
+                            sky: "#E0F2FE",
+                            rose: "#FFE4E6",
+                            lavender: "#EDE9FE",
+                        },
+                        darkslate: {
+                            800: "#1E1A33",
+                            850: "#171428",
+                            900: "#110E1F", // Deep CMU Midnight Purple
+                            950: "#0A0814",
+                        }
+                    },
+                    fontFamily: {
+                        sans: ["Sarabun", "Plus Jakarta Sans", "sans-serif"],
+                        display: ["Plus Jakarta Sans", "Sarabun", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    boxShadow: {
+                        "pastel": "0 4px 20px -2px rgba(126, 34, 206, 0.08)",
+                        "pastel-lg": "0 10px 25px -3px rgba(126, 34, 206, 0.12)",
+                        "glow-purple": "0 0 20px -3px rgba(168, 85, 247, 0.35)",
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS for Excel Generation -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        * { font-family: "Sarabun", "Plus Jakarta Sans", sans-serif; }
+        .font-mono { font-family: "JetBrains Mono", monospace; }
+        .font-display { font-family: "Plus Jakarta Sans", "Sarabun", sans-serif; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; margin: 8px 0; }
+        ::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.4); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.7); }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(147, 51, 234, 0.4); }
+        .dark ::-webkit-scrollbar-thumb:hover { background: rgba(147, 51, 234, 0.7); }
+
+        body, aside, header, main, nav, div, table, tr, td, th {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* Apple Liquid Glass Morphism & Specular Highlights */
+        .apple-liquid-glass {
+            background: rgba(255, 255, 255, 0.72) !important;
+            backdrop-filter: blur(24px) saturate(190%) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.8) !important;
+            box-shadow: 0 10px 30px -5px rgba(107, 70, 193, 0.08), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95) !important;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+        .dark .apple-liquid-glass {
+            background: rgba(23, 20, 40, 0.72) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18) !important;
+        }
+        .apple-liquid-glass-hover:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 14px 36px -4px rgba(124, 58, 237, 0.16), inset 0 1px 2px 0 rgba(255, 255, 255, 1) !important;
+        }
+
+        /* Apple Liquid Primary Button */
+        .apple-btn-cmu {
+            background: linear-gradient(135deg, #7E22CE 0%, #581C87 100%) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.28) !important;
+            box-shadow: 0 10px 25px -4px rgba(126, 34, 206, 0.45), inset 0 1px 1.5px rgba(255, 255, 255, 0.6) !important;
+            transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+        .apple-btn-cmu:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 14px 30px -4px rgba(126, 34, 206, 0.6), inset 0 1px 2.5px rgba(255, 255, 255, 0.9) !important;
+        }
+        .apple-btn-cmu:active {
+            transform: translateY(1px) scale(0.96);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-darkslate-950 dark:text-slate-100 antialiased overflow-hidden selection:bg-cmu-600 selection:text-white">
+
+    <!-- TOP HEADER WITH CMU PURPLE & GOLD GRADIENT -->
+    <header class="bg-white/95 dark:bg-darkslate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-darkslate-800 sticky top-0 z-30 px-3 lg:px-6 py-2.5 flex items-center justify-between gap-2 shadow-xs">
+        
+        <!-- LOGO & BRANDING -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cmu-700 to-cmu-900 border border-cmu-400/40 flex items-center justify-center text-white shadow-inner">
+                <i data-lucide="boxes" class="w-5 h-5 text-cmugold-300"></i>
+            </div>
+            <div>
+                <h1 class="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-1.5 font-display">
+                    <span class="bg-gradient-to-r from-slate-950 via-cmu-900 to-cmu-700 dark:from-white dark:via-cmu-200 dark:to-cmugold-300 bg-clip-text text-transparent">SmartCAD-Lending</span>
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-gradient-to-r from-cmu-600 via-cmu-700 to-cmu-800 text-white font-mono shadow-2xs">Cloud Hub</span>
+                </h1>
+                <p class="text-[11px] text-cmu-800 dark:text-cmu-300 font-bold hidden sm:block">ระบบยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ • กองบริหารงานกลาง มช.</p>
+            </div>
+        </div>
+
+        <!-- RIGHT TOOLBAR: SYNC & STATUS & THEME -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            
+            <!-- Real-time Status Badge -->
+            <div class="flex items-center gap-1.5 apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-semibold">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-emerald-700 dark:text-emerald-400 text-[11px] font-mono font-bold hidden sm:inline">Supabase Live</span>
+            </div>
+
+            <!-- Trigger Sync Google Sheets Button -->
+            <button onclick="triggerGasSync()" id="btnSyncGas" class="apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-bold text-cmu-800 dark:text-cmu-200 hover:text-cmu-900 flex items-center gap-1.5 cursor-pointer shadow-xs" title="สั่งซิงก์ข้อมูลระหว่าง Google Sheets และ Supabase">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cmu-600 dark:text-cmu-400" id="iconSync"></i>
+                <span class="hidden md:inline text-[11px]">ซิงก์ Google Sheets</span>
+            </button>
+
+            <!-- Link to CAD-Inventory Local -->
+            <a href="http://10.155.40.151:3300" target="_blank" class="apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-cmu-700 flex items-center gap-1.5 cursor-pointer shadow-xs" title="เปิดระบบครุภัณฑ์เดิมบน Local Server">
+                <i data-lucide="external-link" class="w-3.5 h-3.5 text-cmugold-500"></i>
+                <span class="hidden lg:inline text-[11px]">CAD-Inventory LAN</span>
+            </a>
+
+            <!-- THEME SLIDER (Day / Night / Auto) -->
+            <div class="relative inline-flex items-center p-1 rounded-2xl bg-slate-200/80 dark:bg-darkslate-800/90 border border-slate-300/60 dark:border-darkslate-700/60 text-xs select-none">
+                <button onclick="setTheme('light')" id="btn-theme-light" class="px-2.5 py-1 rounded-xl text-xs font-bold text-cmu-800 dark:text-white transition flex items-center gap-1" title="โหมดสว่าง">
+                    <span>☀️</span>
+                </button>
+                <button onclick="setTheme('dark')" id="btn-theme-dark" class="px-2.5 py-1 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 transition flex items-center gap-1" title="โหมดมืด">
+                    <span>🌙</span>
+                </button>
+                <button onclick="setTheme('auto')" id="btn-theme-auto" class="px-2.5 py-1 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 transition flex items-center gap-1" title="อัตโนมัติ">
+                    <span class="text-[11px]">Auto</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY WRAPPER -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-64 bg-white dark:bg-darkslate-900 border-r border-cmu-100/80 dark:border-darkslate-800 flex flex-col justify-between hidden md:flex shrink-0 select-none shadow-xs">
+            <div class="p-4 space-y-6 overflow-y-auto">
+                
+                <!-- NAVIGATION SECTION -->
+                <div class="space-y-1.5">
+                    <div class="text-[10px] font-bold text-cmu-600/80 dark:text-cmu-400/80 uppercase tracking-widest px-3 mb-2 flex items-center justify-between">
+                        <span>เมนูระบบยืม-คืน</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-cmu-500"></span>
+                    </div>
+                    
+                    <button onclick="switchView('dashboard')" id="nav-dashboard" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-white bg-cmu-700 dark:bg-cmu-800 shadow-sm">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-xl bg-white/20 text-white"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></div>
+                            <span>แดชบอร์ดภาพรวม</span>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-70"></i>
+                    </button>
+
+                    <button onclick="switchView('borrowings')" id="nav-borrowings" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-500/20"><i data-lucide="clipboard-list" class="w-4 h-4"></i></div>
+                            <span>รายการกำลังยืม</span>
+                        </div>
+                        <span id="badge-nav-borrowings" class="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-bold">0</span>
+                    </button>
+
+                    <button onclick="switchView('assets')" id="nav-assets" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-500/10 text-cmu-600 dark:text-cmu-400 border border-cmu-200/60 dark:border-cmu-500/20"><i data-lucide="archive" class="w-4 h-4"></i></div>
+                            <span>ทะเบียนอุปกรณ์ใหม่</span>
+                        </div>
+                        <span id="badge-nav-assets" class="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-cmu-50 dark:bg-darkslate-800 text-cmu-700 dark:text-cmu-300 font-bold border border-cmu-100 dark:border-darkslate-700">0</span>
+                    </button>
+
+                    <button onclick="switchView('handoff')" id="nav-handoff" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-500/20"><i data-lucide="send" class="w-4 h-4"></i></div>
+                            <span>โอนเข้า CAD-Inventory</span>
+                        </div>
+                        <span id="badge-nav-handoff" class="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold">0</span>
+                    </button>
+                </div>
+
+                <!-- INTEGRATION INFO BOX -->
+                <div class="apple-liquid-glass p-3.5 rounded-2xl text-xs space-y-2 border border-cmu-200/60 dark:border-darkslate-700">
+                    <div class="flex items-center gap-1.5 font-bold text-cmu-900 dark:text-cmu-200">
+                        <i data-lucide="cpu" class="w-4 h-4 text-cmugold-500"></i>
+                        <span>Coexistence Mode</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                        ทำงานร่วมกับ CAD-Inventory (Local QNAP) โดยแบ่งวงจรชีวิตอุปกรณ์:
+                        <span class="block mt-1 text-cmu-700 dark:text-cmu-300 font-semibold">• รอเลข: AppSheet + Supabase</span>
+                        <span class="block text-emerald-600 dark:text-emerald-400 font-semibold">• ได้เลขแล้ว: Export เข้า CAD ทันที</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- FOOTER INFO -->
+            <div class="p-4 border-t border-slate-100 dark:border-darkslate-800 text-[10px] text-slate-400 flex items-center justify-between">
+                <span>กองบริหารงานกลาง มช. © 2026</span>
+                <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.0.0</span>
+            </div>
+        </aside>
+
+        <!-- MAIN SCROLLABLE CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+            <!-- KPI HERO STATS GRID -->
+            <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                
+                <!-- Card 1: Total Assets -->
+                <div class="apple-liquid-glass apple-liquid-glass-hover p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-darkslate-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">อุปกรณ์ทั้งหมด</span>
+                        <div class="w-9 h-9 rounded-2xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                            <i data-lucide="package" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-baseline justify-between">
+                        <h3 id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-display">--</h3>
+                        <span class="text-[11px] font-bold text-blue-600 dark:text-blue-400">ชิ้น</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Available -->
+                <div class="apple-liquid-glass apple-liquid-glass-hover p-4 sm:p-5 rounded-3xl border border-emerald-200/60 dark:border-emerald-500/20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">ว่าง (พร้อมยืม)</span>
+                        <div class="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-baseline justify-between">
+                        <h3 id="statAvailable" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-display">--</h3>
+                        <span class="text-[11px] font-bold text-emerald-600">พร้อมใช้งาน</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Borrowed -->
+                <div class="apple-liquid-glass apple-liquid-glass-hover p-4 sm:p-5 rounded-3xl border border-amber-200/60 dark:border-amber-500/20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">กำลังถูกยืม</span>
+                        <div class="w-9 h-9 rounded-2xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-baseline justify-between">
+                        <h3 id="statBorrowed" class="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400 font-display">--</h3>
+                        <span id="statOverdue" class="text-[11px] font-bold text-rose-500">เกินกำหนด 0</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Waiting Parcel -->
+                <div class="apple-liquid-glass apple-liquid-glass-hover p-4 sm:p-5 rounded-3xl border border-cmu-200/60 dark:border-cmu-500/20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-cmu-700 dark:text-cmu-300 uppercase tracking-wider">รอเลขครุภัณฑ์</span>
+                        <div class="w-9 h-9 rounded-2xl bg-cmu-50 dark:bg-cmu-500/10 text-cmu-600 dark:text-cmu-400 flex items-center justify-center">
+                            <i data-lucide="tag" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-baseline justify-between">
+                        <h3 id="statWaitingParcel" class="text-2xl sm:text-3xl font-extrabold text-cmu-700 dark:text-cmu-300 font-display">--</h3>
+                        <span class="text-[11px] font-bold text-cmu-500">SN อ้างอิง</span>
+                    </div>
+                </div>
+
+                <!-- Card 5: Ready for CAD -->
+                <div class="apple-liquid-glass apple-liquid-glass-hover p-4 sm:p-5 rounded-3xl border border-purple-300 dark:border-purple-500/40 bg-gradient-to-br from-purple-500/5 to-cmu-500/10 col-span-2 lg:col-span-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">พร้อมโอนเข้า CAD</span>
+                        <div class="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center">
+                            <i data-lucide="send" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-baseline justify-between">
+                        <h3 id="statReadyCAD" class="text-2xl sm:text-3xl font-extrabold text-purple-700 dark:text-purple-300 font-display">--</h3>
+                        <span class="text-[11px] font-bold text-purple-600">ได้เลขแล้ว</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: ACTIVE BORROWINGS (DEFAULT VIEW) -->
+            <section id="view-section-borrowings" class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display flex items-center gap-2">
+                            <span>📋 รายการอุปกรณ์ที่กำลังถูกยืมในขณะนี้</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">ตรวจสอบผู้ยืม กำหนดส่งคืน และหลักฐานรูปถ่าย/ลายเซ็นแบบ Real-time</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                            <input type="text" id="searchBorrow" onkeyup="filterBorrowTable()" placeholder="ค้นหาชื่อผู้ยืม / อุปกรณ์ / SN..." class="text-xs pl-9 pr-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-2xl w-60 sm:w-72 focus:outline-none focus:ring-2 focus:ring-cmu-500 transition">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="apple-liquid-glass rounded-3xl overflow-hidden shadow-xs border border-slate-200 dark:border-darkslate-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                            <thead class="bg-slate-100/70 dark:bg-darkslate-800/60 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-darkslate-800">
+                                <tr>
+                                    <th class="p-3.5">รหัสรายการ</th>
+                                    <th class="p-3.5">อุปกรณ์ / Serial Number</th>
+                                    <th class="p-3.5">ผู้ยืม / หน่วยงาน</th>
+                                    <th class="p-3.5">วันที่ยืม</th>
+                                    <th class="p-3.5">กำหนดส่งคืน</th>
+                                    <th class="p-3.5">สถานะ</th>
+                                    <th class="p-3.5 text-center">หลักฐานยืนยัน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyBorrowings" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-slate-400">กำลังเชื่อมต่อฐานข้อมูล Supabase...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: ALL ASSETS (TOGGLEABLE) -->
+            <section id="view-section-assets" class="space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display">
+                            📦 ทะเบียนอุปกรณ์และครุภัณฑ์ใหม่ทั้งหมด
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">รายการพัสดุและอุปกรณ์ไอทีใหม่ที่ลงทะเบียนผ่าน AppSheet</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                            <input type="text" id="searchAsset" onkeyup="filterAssetTable()" placeholder="ค้นหา Serial Number / ชื่ออุปกรณ์..." class="text-xs pl-9 pr-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-2xl w-60 sm:w-72 focus:outline-none focus:ring-2 focus:ring-cmu-500 transition">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="apple-liquid-glass rounded-3xl overflow-hidden shadow-xs border border-slate-200 dark:border-darkslate-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                            <thead class="bg-slate-100/70 dark:bg-darkslate-800/60 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-darkslate-800">
+                                <tr>
+                                    <th class="p-3.5">Asset ID</th>
+                                    <th class="p-3.5">Serial Number</th>
+                                    <th class="p-3.5">ชื่อและรุ่นอุปกรณ์</th>
+                                    <th class="p-3.5">หมวดหมู่</th>
+                                    <th class="p-3.5">สถานะทะเบียน</th>
+                                    <th class="p-3.5">สถานะการยืม</th>
+                                    <th class="p-3.5">เลขครุภัณฑ์</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyAssets" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
+                                <tr>
+                                    <td colspan="7" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: CAD HANDOFF EXPORT -->
+            <section id="view-section-handoff" class="space-y-4 hidden">
+                <div class="apple-liquid-glass p-5 rounded-3xl border border-purple-300 dark:border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-cmu-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-base font-black text-purple-900 dark:text-purple-200 font-display flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-5 h-5 text-cmugold-500"></i>
+                            <span>อุปกรณ์ที่ได้รับเลขครุภัณฑ์แล้ว (พร้อมส่งต่อเข้า CAD-Inventory)</span>
+                        </h2>
+                        <p class="text-xs text-purple-700 dark:text-purple-300 mt-1 max-w-2xl leading-relaxed">
+                            รายการอุปกรณ์เหล่านี้ผ่านการลงทะเบียนเลขครุภัณฑ์แล้ว สามารถกดส่งออกเป็นไฟล์ Excel เพื่อนำไปกด Import เข้าสู่ระบบ <strong>CAD-Inventory (QNAP LAN)</strong> ได้ทันที โดยระบบมีกลไกตรวจสอบรหัสซ้ำ ป้องกันข้อมูลทับซ้อน 100%
+                        </p>
+                    </div>
+
+                    <button onclick="exportToCADExcel()" class="apple-btn-cmu px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 whitespace-nowrap shadow-md cursor-pointer shrink-0">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Export Excel สำหรับ CAD-Inventory</span>
+                    </button>
+                </div>
+
+                <div class="apple-liquid-glass rounded-3xl overflow-hidden shadow-xs border border-slate-200 dark:border-darkslate-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                            <thead class="bg-purple-100/50 dark:bg-purple-950/30 text-purple-900 dark:text-purple-200 font-bold uppercase tracking-wider border-b border-purple-200 dark:border-darkslate-800">
+                                <tr>
+                                    <th class="p-3.5">เลขครุภัณฑ์ (asset_id_code)</th>
+                                    <th class="p-3.5">Serial Number</th>
+                                    <th class="p-3.5">ชื่อครุภัณฑ์ (name_th)</th>
+                                    <th class="p-3.5">ชุดชนิด (category)</th>
+                                    <th class="p-3.5">วันที่ตรวจรับเลข</th>
+                                    <th class="p-3.5">สถานะปัจจุบัน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyHandoff" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL FOR EVIDENCE VIEWER (PHOTO / SIGNATURE) -->
+    <div id="modalEvidence" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="apple-liquid-glass rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-white/20 dark:border-darkslate-700 bg-white dark:bg-darkslate-900">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2" id="modalTitle">
+                    <i data-lucide="image" class="w-5 h-5 text-cmu-600"></i>
+                    <span>หลักฐานการส่งมอบอุปกรณ์</span>
+                </h3>
+                <button onclick="closeEvidenceModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-xl transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="w-full h-72 rounded-2xl border border-slate-200 dark:border-darkslate-800 bg-slate-100 dark:bg-darkslate-950 flex items-center justify-center overflow-hidden">
+                    <img id="modalImg" src="" alt="Evidence" class="max-w-full max-h-full object-contain">
+                </div>
+                <p id="modalDesc" class="text-xs text-slate-500 dark:text-slate-400 text-center font-medium"></p>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="closeEvidenceModal()" class="w-full py-2.5 bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-darkslate-700 transition">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION CORE -->
+    <script>
+        const SUPABASE_URL = "https://undafgcijvuhvdmyjatk.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn";
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz4eoX91Wfe0Op7hi3fhSYWCcbA0I_rNeS_bY7Op73pEaCI6s6t6AwJubFL_alluZwZzg/exec";
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let cacheAssets = [];
+        let cacheBorrowings = [];
+        let cacheHandoff = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            applyThemeUI();
+            loadAllData();
+            setupRealtimeSubscriptions();
+        });
+
+        // Load all data from Supabase
+        async function loadAllData() {
+            await Promise.all([
+                loadAssets(),
+                loadActiveBorrowings(),
+                loadHandoffAssets()
+            ]);
+            updateKPIs();
+        }
+
+        // 1. Fetch Assets
+        async function loadAssets() {
+            const { data, error } = await supabase.from('assets').select('*').order('created_at', { ascending: false });
+            if (!error && data) {
+                cacheAssets = data;
+                renderAssetsTable(data);
+                document.getElementById('badge-nav-assets').innerText = data.length;
+            }
+        }
+
+        // 2. Fetch Active Borrowings
+        async function loadActiveBorrowings() {
+            const { data, error } = await supabase.from('view_active_borrowings').select('*');
+            if (!error && data) {
+                cacheBorrowings = data;
+                renderBorrowingsTable(data);
+                document.getElementById('badge-nav-borrowings').innerText = data.length;
+            }
+        }
+
+        // 3. Fetch CAD-Inventory Handoff View
+        async function loadHandoffAssets() {
+            const { data, error } = await supabase.from('view_assets_ready_for_cad_inventory').select('*');
+            if (!error && data) {
+                cacheHandoff = data;
+                renderHandoffTable(data);
+                document.getElementById('badge-nav-handoff').innerText = data.length;
+            }
+        }
+
+        // Update KPI metrics
+        function updateKPIs() {
+            const total = cacheAssets.length;
+            const available = cacheAssets.filter(a => a.borrow_status === 'ว่าง').length;
+            const borrowed = cacheAssets.filter(a => a.borrow_status === 'ถูกยืม').length;
+            const waitingParcel = cacheAssets.filter(a => a.reg_status === 'รอเลขครุภัณฑ์').length;
+            const readyCad = cacheHandoff.length;
+            const overdue = cacheBorrowings.filter(b => b.current_status === 'เกินกำหนด').length;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statAvailable').innerText = available;
+            document.getElementById('statBorrowed').innerText = borrowed;
+            document.getElementById('statWaitingParcel').innerText = waitingParcel;
+            document.getElementById('statReadyCAD').innerText = readyCad;
+            document.getElementById('statOverdue').innerText = `เกินกำหนด ${overdue}`;
+        }
+
+        // Render Borrowings Table
+        function renderBorrowingsTable(list) {
+            const tbody = document.getElementById('tbodyBorrowings');
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">ไม่มีรายการกำลังยืมในขณะนี้ (อุปกรณ์ทั้งหมดพร้อมใช้งาน)</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(item => {
+                const isOverdue = item.current_status === 'เกินกำหนด';
+                const statusBadge = isOverdue 
+                    ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">เกินกำหนด (${item.days_overdue} วัน)</span>`
+                    : `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">กำลังยืม</span>`;
+
+                const dueDate = new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                const borrowDate = new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
+                        <td class="p-3.5 font-mono font-bold text-cmu-800 dark:text-cmu-300">${item.tx_id}</td>
+                        <td class="p-3.5">
+                            <div class="font-bold text-slate-900 dark:text-white">${item.asset_name}</div>
+                            <div class="text-[11px] font-mono text-slate-400">SN: ${item.serial_number}</div>
+                        </td>
+                        <td class="p-3.5">
+                            <div class="font-bold text-slate-800 dark:text-slate-200">${item.borrower_name}</div>
+                            <div class="text-[11px] text-slate-400">${item.department} ${item.phone ? '• ' + item.phone : ''}</div>
+                        </td>
+                        <td class="p-3.5 text-slate-500 font-mono text-[11px]">${borrowDate}</td>
+                        <td class="p-3.5 font-bold font-mono text-[11px] ${isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${dueDate}</td>
+                        <td class="p-3.5">${statusBadge}</td>
+                        <td class="p-3.5 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo}', 'รูปผู้ยืม: ${item.borrower_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-4 h-4"></i></button>` : ''}
+                                ${item.equip_borrow_photo ? `<button onclick="viewEvidence('${item.equip_borrow_photo}', 'สภาพอุปกรณ์: ${item.asset_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="รูปอุปกรณ์"><i data-lucide="camera" class="w-4 h-4"></i></button>` : ''}
+                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature}', 'ลายเซ็นอิเล็กทรอนิกส์: ${item.borrower_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-4 h-4"></i></button>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // Render Assets Table
+        function renderAssetsTable(list) {
+            const tbody = document.getElementById('tbodyAssets');
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">ยังไม่มีข้อมูลอุปกรณ์ในระบบ</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(a => {
+                const borrowBadge = a.borrow_status === 'ว่าง'
+                    ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">ว่าง</span>`
+                    : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">${a.borrow_status}</span>`;
+
+                const regBadge = a.reg_status === 'รอเลขครุภัณฑ์'
+                    ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">รอเลขครุภัณฑ์</span>`
+                    : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">มีเลขครุภัณฑ์แล้ว</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
+                        <td class="p-3.5 font-mono font-bold text-slate-700 dark:text-slate-300">${a.asset_id}</td>
+                        <td class="p-3.5 font-mono text-slate-900 dark:text-slate-100 font-bold">${a.serial_number}</td>
+                        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${a.asset_name}</td>
+                        <td class="p-3.5 text-slate-500">${a.category || '-'}</td>
+                        <td class="p-3.5">${regBadge}</td>
+                        <td class="p-3.5">${borrowBadge}</td>
+                        <td class="p-3.5 font-mono font-bold text-purple-700 dark:text-purple-400">${a.asset_code || '<span class="text-slate-300 dark:text-slate-600">-</span>'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render CAD Handoff Table
+        function renderHandoffTable(list) {
+            const tbody = document.getElementById('tbodyHandoff');
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">ยังไม่มีอุปกรณ์ที่ได้รับเลขครุภัณฑ์ในขณะนี้</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = list.map(it => {
+                const dateStr = new Date(it.parcel_assigned_at).toLocaleDateString('th-TH');
+                return `
+                    <tr class="hover:bg-purple-50/40 dark:hover:bg-purple-950/20 transition">
+                        <td class="p-3.5 font-mono font-extrabold text-purple-800 dark:text-purple-300 text-sm">${it.asset_code}</td>
+                        <td class="p-3.5 font-mono font-bold text-slate-800 dark:text-slate-200">${it.serial_number}</td>
+                        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${it.asset_name}</td>
+                        <td class="p-3.5 text-slate-500">${it.category}</td>
+                        <td class="p-3.5 font-mono text-[11px] text-slate-500">${dateStr}</td>
+                        <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-300">${it.borrow_status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // One-Click Export to CAD-Inventory Excel Format
+        function exportToCADExcel() {
+            if (cacheHandoff.length === 0) {
+                alert('ยังไม่มีรายการที่พร้อมส่งต่อเข้า CAD-Inventory');
+                return;
+            }
+
+            // Headers exactly mapped to CAD-Inventory COLUMN_SYNONYMS in import_service.py
+            const exportData = cacheHandoff.map(item => ({
+                "รหัสสินทรัพย์ (ID)": item.asset_code,
+                "คำอธิบาย": item.asset_name,
+                "ซีเรียลนัมเบอร์": item.serial_number,
+                "ชุดชนิด": item.category,
+                "แหล่งเงิน": "71",
+                "กอง/ภาค": "กองบริหารงานกลาง",
+                "สภาพ": "01 - ดี"
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "กองบริหารงานกลาง");
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `CAD_Inventory_Import_${today}.xlsx`);
+        }
+
+        // Realtime Supabase Subscriptions
+        function setupRealtimeSubscriptions() {
+            supabase
+                .channel('public:lending_assets')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, () => {
+                    loadAllData();
+                })
+                .subscribe();
+
+            supabase
+                .channel('public:lending_transactions')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'borrow_transactions' }, () => {
+                    loadAllData();
+                })
+                .subscribe();
+        }
+
+        // View Navigation Switcher
+        function switchView(view) {
+            const views = ['dashboard', 'borrowings', 'assets', 'handoff'];
+            views.forEach(v => {
+                const nav = document.getElementById(`nav-${v}`);
+                if (nav) {
+                    if (v === view || (view === 'dashboard' && v === 'dashboard')) {
+                        nav.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-white bg-cmu-700 dark:bg-cmu-800 shadow-sm";
+                    } else {
+                        nav.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800";
+                    }
+                }
+            });
+
+            document.getElementById('view-section-borrowings').classList.toggle('hidden', view !== 'dashboard' && view !== 'borrowings');
+            document.getElementById('view-section-assets').classList.toggle('hidden', view !== 'assets');
+            document.getElementById('view-section-handoff').classList.toggle('hidden', view !== 'handoff');
+        }
+
+        // Evidence Modal
+        function viewEvidence(url, desc) {
+            document.getElementById('modalImg').src = url;
+            document.getElementById('modalDesc').innerText = desc || '';
+            document.getElementById('modalEvidence').classList.remove('hidden');
+        }
+        function closeEvidenceModal() {
+            document.getElementById('modalEvidence').classList.add('hidden');
+        }
+
+        // Trigger GAS Sync
+        async function triggerGasSync() {
+            const btn = document.getElementById('btnSyncGas');
+            const icon = document.getElementById('iconSync');
+            btn.disabled = true;
+            icon.classList.add('animate-spin');
+
+            try {
+                await fetch(`${GAS_WEBAPP_URL}?action=sync`, { mode: 'no-cors' });
+                alert('🚀 ส่งสัญญาณซิงก์ข้อมูลไปยัง Google Apps Script สำเร็จ!');
+                setTimeout(() => loadAllData(), 2500);
+            } catch (err) {
+                console.error(err);
+                alert('⚠️ เกิดข้อผิดพลาดในการเรียก Google Apps Script');
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('animate-spin');
+            }
+        }
+
+        // Search Filter Logic
+        function filterBorrowTable() {
+            const q = document.getElementById('searchBorrow').value.toLowerCase();
+            const filtered = cacheBorrowings.filter(b => 
+                (b.borrower_name && b.borrower_name.toLowerCase().includes(q)) ||
+                (b.asset_name && b.asset_name.toLowerCase().includes(q)) ||
+                (b.serial_number && b.serial_number.toLowerCase().includes(q)) ||
+                (b.tx_id && b.tx_id.toLowerCase().includes(q))
+            );
+            renderBorrowingsTable(filtered);
+        }
+
+        function filterAssetTable() {
+            const q = document.getElementById('searchAsset').value.toLowerCase();
+            const filtered = cacheAssets.filter(a => 
+                (a.asset_name && a.asset_name.toLowerCase().includes(q)) ||
+                (a.serial_number && a.serial_number.toLowerCase().includes(q)) ||
+                (a.asset_id && a.asset_id.toLowerCase().includes(q)) ||
+                (a.asset_code && a.asset_code.toLowerCase().includes(q))
+            );
+            renderAssetsTable(filtered);
+        }
+
+        // Theme Switcher Functions
+        function setTheme(theme) {
+            localStorage.setItem("cad_lending_theme", theme);
+            let isDark = false;
+            if (theme === "dark") {
+                isDark = true;
+            } else if (theme === "light") {
+                isDark = false;
+            } else {
+                isDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            }
+            if (isDark) {
+                document.documentElement.classList.add("dark");
+            } else {
+                document.documentElement.classList.remove("dark");
+            }
+            applyThemeUI();
+        }
+
+        function applyThemeUI() {
+            const current = localStorage.getItem("cad_lending_theme") || "auto";
+            ['light', 'dark', 'auto'].forEach(t => {
+                const btn = document.getElementById(`btn-theme-${t}`);
+                if (btn) {
+                    if (t === current) {
+                        btn.className = "px-2.5 py-1 rounded-xl text-xs font-bold text-cmu-800 dark:text-white bg-white dark:bg-darkslate-700 shadow-sm transition flex items-center gap-1";
+                    } else {
+                        btn.className = "px-2.5 py-1 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition flex items-center gap-1";
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

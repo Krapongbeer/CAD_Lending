@@ -1,0 +1,2 @@
+tx_id,asset_id,borrower_name,department,phone,borrow_date,due_date,borrower_photo,equip_borrow_photo,borrow_signature,return_date,equip_return_photo,return_signature,tx_status,remark,created_at,updated_at
+TX-2026-001,AST-1002,นายสมชาย ใจดี,งานการเงินและพัสดุ,081-234-5678,2026-10-22 09:30:00,2026-10-29,,,,,,,กำลังยืม,ยืมใช้งานประชุมวิชาการ,2026-10-22 09:30:00,2026-10-22 09:30:00
