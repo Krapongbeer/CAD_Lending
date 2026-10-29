@@ -277,9 +277,9 @@
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                         <i data-lucide="user" class="w-3.5 h-3.5 text-cmu-600"></i>
-                        <span>ชื่อผู้ใช้งาน (Username):</span>
+                        <span>ชื่อผู้ใช้งาน:</span>
                     </label>
-                    <input type="text" id="login-username" required placeholder="superadmin, admin, staff, executive..." class="w-full px-4 py-3 text-xs bg-slate-50 dark:bg-darkslate-950 border border-cmu-200 dark:border-darkslate-800 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cmu-500 font-mono shadow-xs">
+                    <input type="text" id="login-username" required placeholder="กรอกชื่อผู้ใช้งาน..." class="w-full px-4 py-3 text-xs bg-slate-50 dark:bg-darkslate-950 border border-cmu-200 dark:border-darkslate-800 rounded-2xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-cmu-500 shadow-xs">
                 </div>
 
                 <div class="space-y-1">
@@ -295,43 +295,6 @@
                     <span>เข้าสู่ระบบ (Login)</span>
                 </button>
             </form>
-
-            <!-- Quick Login Shortcuts (From CAD-Inventory) -->
-            <div class="pt-2 border-t border-slate-200/80 dark:border-darkslate-800 space-y-2 relative z-10">
-                <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 text-center">
-                    ⚡ เลือกเข้าสู่ระบบตามสิทธิ์ (CAD Quick Login):
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="quickLogin('superadmin', 'superadmin1234')" class="p-2.5 rounded-2xl bg-cmu-50/80 hover:bg-cmu-100 dark:bg-darkslate-800 dark:hover:bg-darkslate-750 border border-cmu-200/70 dark:border-darkslate-700 text-left transition flex items-center gap-2 cursor-pointer">
-                        <span class="text-lg">👑</span>
-                        <div class="truncate">
-                            <div class="text-[11px] font-bold text-cmu-900 dark:text-cmu-200 truncate">Superadmin</div>
-                            <div class="text-[9px] text-slate-500 dark:text-slate-400 truncate">ผู้ดูแลระบบสูงสุด</div>
-                        </div>
-                    </button>
-                    <button type="button" onclick="quickLogin('admin', 'admin1234')" class="p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-darkslate-800 dark:hover:bg-darkslate-750 border border-slate-200 dark:border-darkslate-700 text-left transition flex items-center gap-2 cursor-pointer">
-                        <span class="text-lg">📦</span>
-                        <div class="truncate">
-                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">Admin CAD</div>
-                            <div class="text-[9px] text-slate-500 dark:text-slate-400 truncate">เจ้าหน้าที่พัสดุ</div>
-                        </div>
-                    </button>
-                    <button type="button" onclick="quickLogin('staff', 'staff1234')" class="p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-darkslate-800 dark:hover:bg-darkslate-750 border border-slate-200 dark:border-darkslate-700 text-left transition flex items-center gap-2 cursor-pointer">
-                        <span class="text-lg">📱</span>
-                        <div class="truncate">
-                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">Staff Auditor</div>
-                            <div class="text-[9px] text-slate-500 dark:text-slate-400 truncate">เจ้าหน้าที่ตรวจนับ</div>
-                        </div>
-                    </button>
-                    <button type="button" onclick="quickLogin('executive', 'exec1234')" class="p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-darkslate-800 dark:hover:bg-darkslate-750 border border-slate-200 dark:border-darkslate-700 text-left transition flex items-center gap-2 cursor-pointer">
-                        <span class="text-lg">📊</span>
-                        <div class="truncate">
-                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">Executive</div>
-                            <div class="text-[9px] text-slate-500 dark:text-slate-400 truncate">ผู้บริหารกองกลาง</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1047,15 +1010,6 @@
                     if (window.lucide) lucide.createIcons();
                 }
             }
-        }
-
-        // Quick Role autofill for tester convenience
-        function quickLogin(u, p) {
-            const uEl = document.getElementById("login-username");
-            const pEl = document.getElementById("login-password");
-            if (uEl) uEl.value = u;
-            if (pEl) pEl.value = p;
-            handleLogin({ preventDefault: () => {} });
         }
 
         function logout() {
