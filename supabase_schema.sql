@@ -407,7 +407,7 @@ CREATE POLICY "Public read and insert on audit_logs"
 -- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.1.0', 'ระบบ SmartCAD-Lending และระบบ Audit Logging เริ่มต้นทำงานเรียบร้อยแล้ว'),
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.2.0', 'ระบบ SmartCAD-Lending และระบบ Audit Logging เริ่มต้นทำงานเรียบร้อยแล้ว'),
     ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt และ RLS สำเร็จ');
 
 
