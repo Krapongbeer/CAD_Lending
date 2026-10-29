@@ -234,3 +234,141 @@ VALUES
 
 -- อัปเดตสถานะ AST-1002 ตาม transaction ข้างต้น
 UPDATE assets SET borrow_status = 'ถูกยืม' WHERE asset_id = 'AST-1002';
+
+-- ============================================================================
+-- 10. 🛡️ Enterprise Security & Authentication Architecture (ระบบยืนยันตัวตนมาตรฐานสากล)
+-- ============================================================================
+
+-- 10.1 เปิดใช้งาน Cryptographic Extension สำหรับ Bcrypt
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 10.2 สร้างตาราง `system_users` สำหรับจัดเก็บข้อมูลผู้ใช้งานและ Password Hash
+CREATE TABLE IF NOT EXISTS system_users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'staff',
+    department VARCHAR(100) DEFAULT 'กองบริหารงานกลาง',
+    email VARCHAR(100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Index สำหรับค้นหาผู้ใช้งานรวดเร็ว O(1)
+CREATE INDEX IF NOT EXISTS idx_users_username ON system_users(LOWER(username));
+
+-- 10.3 ตั้งค่า Row Level Security (RLS) ขั้นสูงสุด (Strict Isolation)
+ALTER TABLE system_users ENABLE ROW LEVEL SECURITY;
+
+-- 🛡️ ป้องกันไม่ให้ใครก็ตามสามารถ SELECT ข้อมูลหรือ Hash จากตารางนี้ผ่าน Anon/Public REST API ได้ 100%
+CREATE POLICY "Strict Deny Public Select on system_users" 
+    ON system_users FOR ALL 
+    TO anon, authenticated 
+    USING (false);
+
+-- อนุญาตเฉพาะ Service Role (Backend/Server) เท่านั้นที่อ่านเขียนตารางนี้ได้
+CREATE POLICY "Full access for service role on system_users" 
+    ON system_users FOR ALL 
+    TO service_role 
+    USING (true) 
+    WITH CHECK (true);
+
+-- 10.4 นำเข้าข้อมูลผู้ใช้งานจากระบบ CAD-Inventory โดยเก็บเป็น Bcrypt Hash (ต้นฉบับตรงกับ cad_inventory.db 100%)
+INSERT INTO system_users (username, password_hash, full_name, role, department, email)
+VALUES 
+    (
+        'superadmin', 
+        '$2b$12$k0vPnjDaVEDis030i9CbouKD5XK.Hf6r2EHafCGe11Rl0vEC6wf8G', 
+        'ผู้ดูแลระบบสูงสุด (Super Administrator)', 
+        'superadmin', 
+        'กองบริหารงานกลาง', 
+        'superadmin@cad.cmu.ac.th'
+    ),
+    (
+        'admin', 
+        '$2b$12$r.Pr4bdybDWAOeXW3vVLU.wAXPcY4kC3CsgjyIiI2IMceJG/ICWFm', 
+        'เจ้าหน้าที่พัสดุและครุภัณฑ์ (Admin CAD)', 
+        'admin', 
+        'กองบริหารงานกลาง', 
+        'admin@cad.cmu.ac.th'
+    ),
+    (
+        'staff', 
+        '$2b$12$WQSBlQ5UipTzkyeKJJQeseDDkVQ/ZxnjlVEK/e.fA9hjJ2T7DaqmW', 
+        'เจ้าหน้าที่ผู้ตรวจสอบ/ผู้ครอบครอง (Staff Auditor)', 
+        'staff', 
+        'กองบริหารงานกลาง', 
+        'staff@cad.cmu.ac.th'
+    ),
+    (
+        'executive', 
+        '$2b$12$Wz5XTr77j4HWuIIc/zxe2uc53KL1jHkwSxXZpRtrs0SuZjlQzOUuO', 
+        'ผู้อำนวยการกองบริหารงานกลาง (Executive)', 
+        'executive', 
+        'กองบริหารงานกลาง', 
+        'executive@cad.cmu.ac.th'
+    )
+ON CONFLICT (username) DO UPDATE 
+SET 
+    password_hash = EXCLUDED.password_hash,
+    full_name = EXCLUDED.full_name,
+    role = EXCLUDED.role,
+    department = EXCLUDED.department,
+    email = EXCLUDED.email,
+    updated_at = NOW();
+
+-- 10.5 สร้าง Stored Procedure (RPC) สำหรับตรวจสอบการเข้าสู่ระบบอย่างปลอดภัย (Security Definer)
+-- ฟังก์ชันนี้จะประมวลผลการคำนวณ Hash บน PostgreSQL Engine ฝั่งเซิร์ฟเวอร์เท่านั้น ไม่ส่ง Hash ออกมาภายนอก
+CREATE OR REPLACE FUNCTION authenticate_user(p_username TEXT, p_password TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    v_user RECORD;
+    v_dummy_hash TEXT := '$2b$12$k0vPnjDaVEDis030i9CbouKD5XK.Hf6r2EHafCGe11Rl0vEC6wf8G';
+    v_is_valid BOOLEAN := FALSE;
+BEGIN
+    -- ค้นหาผู้ใช้งานตาม username แบบ Case-insensitive
+    SELECT id, username, password_hash, full_name, role, department, email, is_active
+    INTO v_user
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_username));
+
+    -- ตรวจสอบ Bcrypt Hash บน Database Engine
+    IF FOUND AND v_user.is_active = TRUE THEN
+        v_is_valid := (v_user.password_hash = crypt(p_password, v_user.password_hash));
+    ELSE
+        -- ทำงานหลอก (Dummy calculation) เพื่อป้องกัน Timing Attack / User Enumeration
+        PERFORM crypt(p_password, v_dummy_hash);
+        v_is_valid := FALSE;
+    END IF;
+
+    -- ส่งเฉพาะข้อมูล User ที่ปลอดภัยกลับออกไป (ไม่ส่ง password_hash หลุดออกไปเด็ดขาด)
+    IF v_is_valid THEN
+        RETURN jsonb_build_object(
+            'success', true,
+            'user', jsonb_build_object(
+                'id', v_user.id,
+                'username', v_user.username,
+                'full_name', v_user.full_name,
+                'role', v_user.role,
+                'department', v_user.department,
+                'email', v_user.email
+            )
+        );
+    ELSE
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง'
+        );
+    END IF;
+END;
+$$;
+
+-- ให้สิทธิ์ Anon และ Authenticated เรียกใช้ RPC Function นี้ได้
+GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT) TO anon, authenticated;
+

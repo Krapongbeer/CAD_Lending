@@ -16,6 +16,11 @@
    - สร้างตาราง `assets` และ `borrow_transactions` พร้อม Index & Constraint ครบถ้วน
    - สร้าง Trigger สำหรับ Auto-Sync สถานะยืม-คืนอัตโนมัติ
    - สร้าง View สรุปข้อมูลสำหรับหน้า Dashboard และ View สำหรับส่งต่อ (Handoff) ไปยัง CAD-Inventory
+   - **🛡️ Enterprise Security & Authentication (ระบบผู้ใช้และความปลอดภัยระดับองค์กร):**
+     - เปิดใช้งาน Extension `pgcrypto` สำหรับคำนวณ Bcrypt Hash บน Database Engine
+     - สร้างตาราง `system_users` พร้อม Row Level Security (RLS) บล็อกการอ่านจาก Public 100%
+     - สร้าง Stored Procedure `authenticate_user(p_username, p_password)` พร้อมกลไกป้องกัน Timing Attack
+     - ซิงก์บัญชีผู้ใช้งานเริ่มต้น (`superadmin`, `admin`, `staff`, `executive`) ด้วย Bcrypt Hash ตรงกับ CAD-Inventory 100%
 
 ---
 
