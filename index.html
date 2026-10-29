@@ -379,7 +379,6 @@
                             <div class="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i></div>
                             <span>ออกรายงานยืม-คืน</span>
                         </div>
-                        <span class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">ราชการ</span>
                     </button>
 
                     <button onclick="switchView('audit')" id="nav-audit" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800 cursor-pointer">
@@ -715,20 +714,16 @@
                         <div>
                             <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display flex items-center gap-2">
                                 <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
-                                <span>ออกรายงานสรุปการยืม-คืนอุปกรณ์และครุภัณฑ์ราชการ</span>
+                                <span>ออกรายงานสรุปการยืม-คืนอุปกรณ์และครุภัณฑ์</span>
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มมาตรฐานทางราชการ (พด.ยค-๐๑) รองรับการพิมพ์ A4 แนวนอน พร้อมช่องลงนาม 4 ฝ่าย และส่งออก Excel</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มมาตรฐาน (พด.ยค-๐๑) รองรับการพิมพ์รายงาน A4 แนวนอน พร้อมช่องลงนาม 4 ฝ่าย</p>
                         </div>
 
                         <!-- Action Buttons -->
                         <div id="report-action-buttons" class="flex flex-wrap items-center gap-2">
-                            <button onclick="exportBorrowReportExcel()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
-                                <i data-lucide="download" class="w-4 h-4"></i>
-                                <span>ส่งออก Excel (.xlsx)</span>
-                            </button>
                             <button onclick="printBorrowReport()" class="apple-btn-cmu px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
                                 <i data-lucide="printer" class="w-4 h-4"></i>
-                                <span>พิมพ์รายงานราชการ (A4/PDF)</span>
+                                <span>พิมพ์รายงาน (A4/PDF)</span>
                             </button>
                         </div>
                     </div>
