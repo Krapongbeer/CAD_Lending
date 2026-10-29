@@ -168,6 +168,27 @@
             th, td { border: 1px solid #1e293b !important; padding: 4px 6px !important; color: black !important; }
             th { background-color: #f1f5f9 !important; font-weight: bold !important; text-align: center !important; }
         }
+
+        /* Strict Authentication View Separation */
+        body:not(.authenticated) #app-main-layout {
+            display: none !important;
+        }
+        body:not(.authenticated) #view-login {
+            display: flex !important;
+            min-height: calc(100vh - 65px);
+            width: 100%;
+        }
+        body:not(.authenticated) #header-auth-tools,
+        body:not(.authenticated) #header-global-search,
+        body:not(.authenticated) #header-user-profile {
+            display: none !important;
+        }
+        body.authenticated #view-login {
+            display: none !important;
+        }
+        body.authenticated #app-main-layout {
+            display: flex !important;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-darkslate-950 dark:text-slate-100 antialiased overflow-hidden selection:bg-cmu-600 selection:text-white">
@@ -176,7 +197,7 @@
     <header class="bg-white/95 dark:bg-darkslate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-darkslate-800 sticky top-0 z-30 px-3 lg:px-6 py-2.5 flex items-center justify-between gap-2 shadow-xs">
         
         <!-- LOGO & BRANDING -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 shrink-0">
             <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cmu-700 to-cmu-900 border border-cmu-400/40 flex items-center justify-center text-white shadow-inner">
                 <i data-lucide="boxes" class="w-5 h-5 text-cmugold-300"></i>
             </div>
@@ -189,8 +210,8 @@
             </div>
         </div>
 
-        <!-- UNIVERSAL GLOBAL SEARCH BAR (Live Instant Search) -->
-        <div class="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-2 hidden sm:block">
+        <!-- UNIVERSAL GLOBAL SEARCH BAR (Only shown when logged in) -->
+        <div id="header-global-search" class="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-2 hidden sm:block">
             <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
             <input type="text" id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="🔍 ค้นหาด่วน: อุปกรณ์, S/N, ผู้ยืม, ครุภัณฑ์ (เช่น iPad)..." class="w-full text-xs pl-9 pr-8 py-2 bg-slate-100/90 dark:bg-darkslate-800/90 border border-slate-200/90 dark:border-darkslate-700/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cmu-500 font-medium transition shadow-2xs">
             <button id="globalSearchClear" onclick="clearGlobalSearch()" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer p-0.5 rounded-lg" title="ล้างการค้นหา">
@@ -198,29 +219,32 @@
             </button>
         </div>
 
-        <!-- RIGHT TOOLBAR: SYNC & STATUS & THEME -->
+        <!-- RIGHT TOOLBAR -->
         <div class="flex items-center gap-2 sm:gap-3">
             
-            <!-- Real-time Status Badge -->
-            <div class="flex items-center gap-1.5 apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-semibold">
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span class="text-emerald-700 dark:text-emerald-400 text-[11px] font-mono font-bold hidden sm:inline">Supabase Live</span>
+            <!-- AUTHENTICATED SYSTEM TOOLS (Shown ONLY after login) -->
+            <div id="header-auth-tools" class="flex items-center gap-2 sm:gap-3">
+                <!-- Real-time Status Badge -->
+                <div class="flex items-center gap-1.5 apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-semibold">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-emerald-700 dark:text-emerald-400 text-[11px] font-mono font-bold hidden sm:inline">Supabase Live</span>
+                </div>
+
+                <!-- Trigger Sync Google Sheets Button -->
+                <button onclick="triggerGasSync()" id="btnSyncGas" class="apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-bold text-cmu-800 dark:text-cmu-200 hover:text-cmu-900 flex items-center gap-1.5 cursor-pointer shadow-xs" title="สั่งซิงก์ข้อมูลระหว่าง Google Sheets และ Supabase">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cmu-600 dark:text-cmu-400" id="iconSync"></i>
+                    <span class="hidden md:inline text-[11px]">ซิงก์ Google Sheets</span>
+                </button>
+
+                <!-- Link to CAD-Inventory Local -->
+                <a href="http://10.155.40.151:3300" target="_blank" class="apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-cmu-700 flex items-center gap-1.5 cursor-pointer shadow-xs" title="เปิดระบบครุภัณฑ์เดิมบน Local Server">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-cmugold-500"></i>
+                    <span class="hidden lg:inline text-[11px]">CAD-Inventory LAN</span>
+                </a>
             </div>
-
-            <!-- Trigger Sync Google Sheets Button -->
-            <button onclick="triggerGasSync()" id="btnSyncGas" class="apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-bold text-cmu-800 dark:text-cmu-200 hover:text-cmu-900 flex items-center gap-1.5 cursor-pointer shadow-xs" title="สั่งซิงก์ข้อมูลระหว่าง Google Sheets และ Supabase">
-                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cmu-600 dark:text-cmu-400" id="iconSync"></i>
-                <span class="hidden md:inline text-[11px]">ซิงก์ Google Sheets</span>
-            </button>
-
-            <!-- Link to CAD-Inventory Local -->
-            <a href="http://10.155.40.151:3300" target="_blank" class="apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-cmu-700 flex items-center gap-1.5 cursor-pointer shadow-xs" title="เปิดระบบครุภัณฑ์เดิมบน Local Server">
-                <i data-lucide="external-link" class="w-3.5 h-3.5 text-cmugold-500"></i>
-                <span class="hidden lg:inline text-[11px]">CAD-Inventory LAN</span>
-            </a>
 
             <!-- THEME SLIDER (Day / Night / Auto) -->
             <div class="relative inline-flex items-center p-1 rounded-2xl bg-slate-200/80 dark:bg-darkslate-800/90 border border-slate-300/60 dark:border-darkslate-700/60 text-xs select-none">
@@ -235,13 +259,7 @@
                 </button>
             </div>
 
-            <!-- LOGIN BUTTON (Shown when NOT logged in) -->
-            <button id="header-btn-login" onclick="openLoginScreen()" class="apple-btn-cmu px-3.5 py-1.5 text-xs font-bold rounded-2xl flex items-center gap-1.5 shadow-sm cursor-pointer">
-                <i data-lucide="log-in" class="w-4 h-4 text-cmugold-300"></i>
-                <span>เข้าสู่ระบบ</span>
-            </button>
-
-            <!-- LOGGED-IN USER PROFILE & LOGOUT BUTTON (Shown when logged in) -->
+            <!-- LOGGED-IN USER PROFILE & LOGOUT BUTTON (Shown ONLY when logged in) -->
             <div id="header-user-profile" class="hidden items-center gap-2 pl-2 border-l border-slate-200 dark:border-darkslate-700">
                 <div class="flex items-center gap-2 apple-liquid-glass px-2.5 py-1 rounded-2xl text-xs">
                     <span id="header-user-avatar" class="text-base">👑</span>
@@ -1014,23 +1032,43 @@
             const viewLogin = document.getElementById("view-login");
             const appLayout = document.getElementById("app-main-layout");
             const headerProfile = document.getElementById("header-user-profile");
-            const headerBtnLogin = document.getElementById("header-btn-login");
+            const headerAuthTools = document.getElementById("header-auth-tools");
+            const headerSearch = document.getElementById("header-global-search");
 
             if (!currentUser) {
-                if (viewLogin) viewLogin.classList.remove("hidden");
-                if (appLayout) appLayout.classList.add("hidden");
+                document.body.classList.remove("authenticated");
+                if (viewLogin) {
+                    viewLogin.classList.remove("hidden");
+                    viewLogin.style.display = "flex";
+                }
+                if (appLayout) {
+                    appLayout.classList.add("hidden");
+                    appLayout.style.display = "none";
+                }
                 if (headerProfile) headerProfile.classList.add("hidden");
-                if (headerBtnLogin) headerBtnLogin.classList.remove("hidden");
+                if (headerAuthTools) headerAuthTools.classList.add("hidden");
+                if (headerSearch) headerSearch.classList.add("hidden");
                 if (window.lucide) lucide.createIcons();
                 return false;
             } else {
-                if (viewLogin) viewLogin.classList.add("hidden");
-                if (appLayout) appLayout.classList.remove("hidden");
+                document.body.classList.add("authenticated");
+                if (viewLogin) {
+                    viewLogin.classList.add("hidden");
+                    viewLogin.style.display = "none";
+                }
+                if (appLayout) {
+                    appLayout.classList.remove("hidden");
+                    appLayout.style.display = "flex";
+                }
+                if (headerAuthTools) {
+                    headerAuthTools.classList.remove("hidden");
+                    headerAuthTools.classList.add("flex");
+                }
                 if (headerProfile) {
                     headerProfile.classList.remove("hidden");
                     headerProfile.classList.add("flex");
                 }
-                if (headerBtnLogin) headerBtnLogin.classList.add("hidden");
+                if (headerSearch) headerSearch.classList.remove("hidden");
                 updateUserUI(currentUser);
                 if (window.lucide) lucide.createIcons();
                 return true;
@@ -1038,11 +1076,8 @@
         }
 
         function openLoginScreen() {
-            const viewLogin = document.getElementById("view-login");
-            const appLayout = document.getElementById("app-main-layout");
-            if (viewLogin) viewLogin.classList.remove("hidden");
-            if (appLayout) appLayout.classList.add("hidden");
-            if (window.lucide) lucide.createIcons();
+            document.body.classList.remove("authenticated");
+            checkAuth();
         }
 
         function updateUserUI(user) {
@@ -1156,6 +1191,7 @@
                 logAudit('LOGOUT', 'AUTH', u, 'ออกจากระบบ SmartCAD-Lending');
                 localStorage.removeItem("cad_lending_user");
                 currentUser = null;
+                document.body.classList.remove("authenticated");
                 checkAuth();
             }
         }
