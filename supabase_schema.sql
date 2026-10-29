@@ -372,3 +372,42 @@ $$;
 -- ให้สิทธิ์ Anon และ Authenticated เรียกใช้ RPC Function นี้ได้
 GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT) TO anon, authenticated;
 
+-- ============================================================================
+-- 11. 📜 Enterprise Audit Logging System (ระบบบันทึกประวัติการตรวจสอบตามมาตรฐานสากล)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    username VARCHAR(50) NOT NULL,
+    user_role VARCHAR(20) NOT NULL DEFAULT 'staff',
+    action VARCHAR(50) NOT NULL,
+    target_type VARCHAR(50),
+    target_id VARCHAR(100),
+    details TEXT,
+    ip_address VARCHAR(50) DEFAULT 'web-client',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes สำหรับการสืบค้นและ Audit ที่รวดเร็ว
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_username ON audit_logs(username);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+
+-- เปิด RLS สำหรับ Audit Logs
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- อนุญาตให้อ่านและบันทึกข้อมูลผ่าน Web Application ได้
+CREATE POLICY "Public read and insert on audit_logs"
+    ON audit_logs FOR ALL
+    TO anon, authenticated
+    USING (true)
+    WITH CHECK (true);
+
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log)
+INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+VALUES 
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.1.0', 'ระบบ SmartCAD-Lending และระบบ Audit Logging เริ่มต้นทำงานเรียบร้อยแล้ว'),
+    ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt และ RLS สำเร็จ');
+
+

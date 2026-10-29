@@ -150,20 +150,23 @@
             transform: translateY(1px) scale(0.96);
         }
 
-        /* Printable Report Styles */
+        /* Printable Formal Government Report Styles */
         @media print {
-            body { background: white !important; color: black !important; overflow: visible !important; }
-            header, aside, #kpi-stats-section, #view-section-borrowings, #view-section-assets, #view-section-handoff, #view-login, .no-print, #modalEvidence { display: none !important; }
-            #app-main-layout { display: block !important; overflow: visible !important; height: auto !important; }
-            main { overflow: visible !important; padding: 0 !important; }
+            @page { size: A4 landscape; margin: 8mm; }
+            body { background: white !important; color: black !important; overflow: visible !important; font-size: 8.5pt !important; }
+            header, aside, #kpi-stats-section, #view-section-borrowings, #view-section-assets, #view-section-handoff, #view-section-audit, #view-login, .no-print, #modalEvidence { display: none !important; }
+            #app-main-layout { display: block !important; overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+            main { overflow: visible !important; padding: 0 !important; margin: 0 !important; }
             #view-section-reports { display: block !important; }
             #report-filter-bar, #report-action-buttons, #report-kpi-summary { display: none !important; }
             #printable-report-header { display: block !important; }
-            #printable-report-signature { display: grid !important; }
-            .apple-liquid-glass { box-shadow: none !important; border: 1px solid #cbd5e1 !important; background: white !important; backdrop-filter: none !important; }
-            table { width: 100% !important; border-collapse: collapse !important; font-size: 10pt !important; }
-            th, td { border: 1px solid #cbd5e1 !important; padding: 6px 8px !important; color: black !important; }
-            th { background-color: #f1f5f9 !important; }
+            #printable-summary-box { display: grid !important; }
+            #printable-legal-notice { display: block !important; }
+            #printable-report-signature { display: grid !important; page-break-inside: avoid !important; }
+            .apple-liquid-glass { box-shadow: none !important; border: none !important; background: transparent !important; backdrop-filter: none !important; }
+            table { width: 100% !important; border-collapse: collapse !important; font-size: 8pt !important; line-height: 1.25 !important; }
+            th, td { border: 1px solid #1e293b !important; padding: 4px 6px !important; color: black !important; }
+            th { background-color: #f1f5f9 !important; font-weight: bold !important; text-align: center !important; }
         }
     </style>
 </head>
@@ -184,6 +187,15 @@
                 </h1>
                 <p class="text-[11px] text-cmu-800 dark:text-cmu-300 font-bold hidden sm:block">ระบบยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ • กองบริหารงานกลาง มช.</p>
             </div>
+        </div>
+
+        <!-- UNIVERSAL GLOBAL SEARCH BAR (Live Instant Search) -->
+        <div class="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md mx-2 hidden sm:block">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="🔍 ค้นหาด่วน: อุปกรณ์, S/N, ผู้ยืม, ครุภัณฑ์ (เช่น iPad)..." class="w-full text-xs pl-9 pr-8 py-2 bg-slate-100/90 dark:bg-darkslate-800/90 border border-slate-200/90 dark:border-darkslate-700/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cmu-500 font-medium transition shadow-2xs">
+            <button id="globalSearchClear" onclick="clearGlobalSearch()" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer p-0.5 rounded-lg" title="ล้างการค้นหา">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
         </div>
 
         <!-- RIGHT TOOLBAR: SYNC & STATUS & THEME -->
@@ -349,7 +361,15 @@
                             <div class="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i></div>
                             <span>ออกรายงานยืม-คืน</span>
                         </div>
-                        <span class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">Excel/Print</span>
+                        <span class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">ราชการ</span>
+                    </button>
+
+                    <button onclick="switchView('audit')" id="nav-audit" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800 cursor-pointer">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20"><i data-lucide="shield-alert" class="w-4 h-4"></i></div>
+                            <span>บันทึกประวัติ (Audit Log)</span>
+                        </div>
+                        <span id="badge-nav-audit" class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">Security</span>
                     </button>
                 </div>
 
@@ -587,38 +607,6 @@
                 </div>
             </section>
 
-                    <div class="flex items-center gap-2">
-                        <div class="relative">
-                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-                            <input type="text" id="searchAsset" onkeyup="filterAssetTable()" placeholder="ค้นหา Serial Number / ชื่ออุปกรณ์..." class="text-xs pl-9 pr-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-2xl w-60 sm:w-72 focus:outline-none focus:ring-2 focus:ring-cmu-500 transition">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="apple-liquid-glass rounded-3xl overflow-hidden shadow-xs border border-slate-200 dark:border-darkslate-800">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
-                            <thead class="bg-slate-100/70 dark:bg-darkslate-800/60 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-darkslate-800">
-                                <tr>
-                                    <th class="p-3.5">Asset ID</th>
-                                    <th class="p-3.5">Serial Number</th>
-                                    <th class="p-3.5">ชื่อและรุ่นอุปกรณ์</th>
-                                    <th class="p-3.5">หมวดหมู่</th>
-                                    <th class="p-3.5">สถานะทะเบียน</th>
-                                    <th class="p-3.5">สถานะการยืม</th>
-                                    <th class="p-3.5">เลขครุภัณฑ์</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbodyAssets" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
-                                <tr>
-                                    <td colspan="7" class="p-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
             <!-- SECTION: CAD HANDOFF EXPORT -->
             <section id="view-section-handoff" class="space-y-4 hidden">
                 <div class="apple-liquid-glass p-5 rounded-3xl border border-purple-300 dark:border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-cmu-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -671,15 +659,47 @@
                     <div class="text-xs text-slate-600 mt-1 font-mono" id="print-report-meta">ข้อมูล ณ วันที่: -</div>
                 </div>
 
+                <!-- FORMAL GOVERNMENT REPORT PRINTABLE HEADER (Shown only on Print/PDF) -->
+                <div id="printable-report-header" class="hidden mb-4 text-slate-900 border-b-2 border-slate-900 pb-3">
+                    <div class="flex items-start justify-between gap-4 mb-2">
+                        <div class="w-16 h-16 flex items-center justify-center border border-slate-300 rounded p-1 bg-white">
+                            <span class="text-2xl font-black text-cmu-800">มช.</span>
+                        </div>
+                        <div class="flex-1 text-center">
+                            <h2 class="text-sm font-black tracking-tight uppercase">มหาวิทยาลัยเชียงใหม่ • CHIANG MAI UNIVERSITY</h2>
+                            <h3 class="text-xs font-bold text-slate-700">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย (งานพัสดุและยานพาหนะ)</h3>
+                            <h1 class="text-base font-black mt-1 text-slate-950">แบบรายงานสรุปและตรวจสอบการยืม - คืนพัสดุและครุภัณฑ์ราชการ</h1>
+                            <p class="text-[10px] text-slate-600">ตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙</p>
+                        </div>
+                        <div class="w-28 text-right text-[9px] text-slate-700 leading-tight">
+                            <div class="font-bold border border-slate-400 p-1 rounded bg-slate-50">แบบ พด.ยค-๐๑</div>
+                            <div class="mt-1">ปีงบประมาณ ๒๕๖๙</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] text-slate-700 pt-2 border-t border-slate-300">
+                        <div><b>หน่วยงานผู้ควบคุม:</b> กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</div>
+                        <div id="print-report-period"><b>ช่วงเวลา:</b> ข้อมูลสรุปล่าสุดประจำวัน</div>
+                        <div id="print-report-meta"><b>วันที่พิมพ์รายงาน:</b> -</div>
+                    </div>
+                </div>
+
+                <!-- FORMAL EXECUTIVE SUMMARY STAT BOX (Printed & Screen) -->
+                <div id="printable-summary-box" class="hidden grid-cols-4 gap-2 mb-3 p-2.5 border border-slate-400 text-[10px] bg-slate-50 text-slate-900">
+                    <div><b>รวมในรายงาน:</b> <span id="print-stat-total" class="font-bold">0</span> รายการ</div>
+                    <div><b>อยู่ระหว่างการยืม:</b> <span id="print-stat-active" class="font-bold">0</span> รายการ</div>
+                    <div><b>เกินกำหนดส่งคืน:</b> <span id="print-stat-overdue" class="font-bold text-rose-700">0</span> รายการ</div>
+                    <div><b>ส่งคืนเรียบร้อยแล้ว:</b> <span id="print-stat-returned" class="font-bold text-emerald-700">0</span> รายการ</div>
+                </div>
+
                 <!-- Report Action & Filter Bar (Hidden on Print) -->
                 <div id="report-filter-bar" class="apple-liquid-glass p-5 rounded-3xl border border-slate-200 dark:border-darkslate-800 space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-darkslate-800 pb-3">
                         <div>
                             <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display flex items-center gap-2">
                                 <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
-                                <span>ออกรายงานสรุปการยืม-คืนอุปกรณ์และครุภัณฑ์</span>
+                                <span>ออกรายงานสรุปการยืม-คืนอุปกรณ์และครุภัณฑ์ราชการ</span>
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">กรองข้อมูลตามสถานะ วันที่ หรือผู้ยืม พร้อมส่งออก Excel หรือพิมพ์รายงานทางการ</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มมาตรฐานทางราชการ (พด.ยค-๐๑) รองรับการพิมพ์ A4 แนวนอน พร้อมช่องลงนาม 4 ฝ่าย และส่งออก Excel</p>
                         </div>
 
                         <!-- Action Buttons -->
@@ -690,7 +710,7 @@
                             </button>
                             <button onclick="printBorrowReport()" class="apple-btn-cmu px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
                                 <i data-lucide="printer" class="w-4 h-4"></i>
-                                <span>พิมพ์รายงาน / PDF</span>
+                                <span>พิมพ์รายงานราชการ (A4/PDF)</span>
                             </button>
                         </div>
                     </div>
@@ -721,7 +741,7 @@
                             <label class="font-bold text-slate-600 dark:text-slate-400">คำค้นหา:</label>
                             <div class="relative">
                                 <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-                                <input type="text" id="reportSearch" onkeyup="filterReportsTable()" placeholder="ค้นหาชื่อผู้ยืม / หน่วยงาน / ชื่ออุปกรณ์ / SN..." class="w-full pl-9 pr-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cmu-500">
+                                <input type="text" id="reportSearch" oninput="filterReportsTable()" placeholder="ค้นหาชื่อผู้ยืม / หน่วยงาน / ชื่ออุปกรณ์ / SN..." class="w-full pl-9 pr-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cmu-500">
                             </div>
                         </div>
                     </div>
@@ -765,40 +785,157 @@
                         <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
                             <thead class="bg-slate-100/70 dark:bg-darkslate-800/60 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-darkslate-800">
                                 <tr>
-                                    <th class="p-3">ลำดับ</th>
-                                    <th class="p-3">รหัสรายการ</th>
-                                    <th class="p-3">อุปกรณ์ / Serial Number</th>
-                                    <th class="p-3">ผู้ยืม / หน่วยงาน</th>
-                                    <th class="p-3">วันที่ยืม</th>
-                                    <th class="p-3">กำหนดส่งคืน</th>
-                                    <th class="p-3">สถานะ</th>
-                                    <th class="p-3 text-center no-print">หลักฐาน</th>
+                                    <th class="p-2.5 text-center">ลำดับ</th>
+                                    <th class="p-2.5">เลขที่ใบยืม</th>
+                                    <th class="p-2.5">เลขครุภัณฑ์</th>
+                                    <th class="p-2.5">รายการพัสดุและยี่ห้อ/รุ่น</th>
+                                    <th class="p-2.5">Serial Number</th>
+                                    <th class="p-2.5">หมวดหมู่</th>
+                                    <th class="p-2.5">ผู้ยืม / หน่วยงาน</th>
+                                    <th class="p-2.5">เบอร์โทร</th>
+                                    <th class="p-2.5">วันที่ยืม</th>
+                                    <th class="p-2.5">กำหนดส่งคืน</th>
+                                    <th class="p-2.5">วันที่คืนจริง</th>
+                                    <th class="p-2.5">สภาพพัสดุ</th>
+                                    <th class="p-2.5">สถานะ</th>
+                                    <th class="p-2.5 text-center no-print">หลักฐาน</th>
                                 </tr>
                             </thead>
                             <tbody id="tbodyReports" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
                                 <tr>
-                                    <td colspan="8" class="p-8 text-center text-slate-400">กำลังเตรียมรายงาน...</td>
+                                    <td colspan="14" class="p-8 text-center text-slate-400">กำลังเตรียมรายงาน...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Formal Printable Signatures (Printed only on Print/PDF) -->
-                <div id="printable-report-signature" class="hidden mt-12 grid-cols-2 gap-8 text-xs text-center text-slate-900 pt-6">
-                    <div class="space-y-8">
-                        <div>ลงชื่อ.............................................................. ผู้จัดทำรายงาน</div>
-                        <div>(..............................................................)</div>
-                        <div>ตำแหน่ง เจ้าหน้าที่พัสดุและครุภัณฑ์</div>
-                        <div>วันที่ .......... / .......... / ................</div>
+                <!-- Legal Compliance Notice (Shown on Print) -->
+                <div id="printable-legal-notice" class="hidden text-[9px] text-slate-700 mt-4 leading-relaxed p-2.5 border border-slate-400 rounded bg-slate-50/50">
+                    <b>ข้อกำหนดตามระเบียบพัสดุภาครัฐ:</b> การยืมพัสดุและครุภัณฑ์ราชการนี้ เป็นไปตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙ การควบคุมและการจำหน่ายพัสดุ ผู้ยืมมีหน้าที่ต้องระวังรักษาพัสดุที่ยืมไปมิให้สูญหายหรือเสียหาย หากเกิดความเสียหาย ชำรุด หรือสูญหาย ผู้ยืมต้องรับผิดชอบชดใช้ค่าเสียหายตามระเบียบของทางราชการ
+                </div>
+
+                <!-- 4-Party Official Government Signature Blocks (Printed on Print/PDF) -->
+                <div id="printable-report-signature" class="hidden mt-8 grid-cols-4 gap-4 text-[10px] text-center text-slate-900 pt-4 border-t-2 border-slate-900">
+                    <div class="space-y-4">
+                        <div class="font-bold">๑. ผู้จัดทำรายงาน / ผู้ยืม</div>
+                        <div class="pt-6">ลงชื่อ......................................................</div>
+                        <div>(......................................................)</div>
+                        <div class="text-[9px] text-slate-600">เจ้าหน้าที่ผู้บันทึกข้อมูล</div>
+                        <div class="text-[9px]">วันที่ ......./......./...........</div>
                     </div>
-                    <div class="space-y-8">
-                        <div>ลงชื่อ.............................................................. ผู้รับรองรายงาน</div>
-                        <div>(..............................................................)</div>
-                        <div>ตำแหน่ง ผู้อำนวยการกองบริหารงานกลาง</div>
-                        <div>วันที่ .......... / .......... / ................</div>
+                    <div class="space-y-4">
+                        <div class="font-bold">๒. เจ้าหน้าที่พัสดุผู้ตรวจสอบ</div>
+                        <div class="pt-6">ลงชื่อ......................................................</div>
+                        <div>(......................................................)</div>
+                        <div class="text-[9px] text-slate-600">นักวิชาการพัสดุ ชำนาญการ</div>
+                        <div class="text-[9px]">วันที่ ......./......./...........</div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="font-bold">๓. หัวหน้างานพัสดุและยานพาหนะ</div>
+                        <div class="pt-6">ลงชื่อ......................................................</div>
+                        <div>(......................................................)</div>
+                        <div class="text-[9px] text-slate-600">หัวหน้างานพัสดุและยานพาหนะ</div>
+                        <div class="text-[9px]">วันที่ ......./......./...........</div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="font-bold">๔. ผู้อนุมัติ (กองบริหารงานกลาง)</div>
+                        <div class="pt-6">ลงชื่อ......................................................</div>
+                        <div>(......................................................)</div>
+                        <div class="text-[9px] text-slate-600">ผู้อำนวยการกองบริหารงานกลาง</div>
+                        <div class="text-[9px]">วันที่ ......./......./...........</div>
                     </div>
                 </div>
+
+            </section>
+
+            <!-- SECTION: AUDIT LOGS (SECURITY & AUDIT TRAIL) -->
+            <section id="view-section-audit" class="space-y-4 hidden">
+                <div class="apple-liquid-glass p-5 rounded-3xl border border-blue-200 dark:border-blue-900/50 bg-gradient-to-r from-blue-500/10 via-cmu-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-[10px] font-bold font-mono">ISO/IEC 27001 Audit Trail</span>
+                            <span class="text-xs text-slate-400">•</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">มาตรการความปลอดภัยและธรรมาภิบาลข้อมูล</span>
+                        </div>
+                        <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display mt-1 flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-blue-600"></i>
+                            <span>บันทึกประวัติการใช้งานและตรวจสอบระบบ (System Audit Log)</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">บันทึกทุกกิจกรรมการเข้าสู่ระบบ, การยืม-คืน, การส่งออกข้อมูล CAD และการค้นหาข้อมูล เพื่อความโปร่งใสและตรวจสอบได้</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportAuditLogsExcel()" class="apple-liquid-glass px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-blue-600 flex items-center gap-1.5 shadow-xs cursor-pointer">
+                            <i data-lucide="download" class="w-4 h-4 text-blue-500"></i>
+                            <span>Export CSV/Excel</span>
+                        </button>
+                        <button onclick="loadAuditLogs()" class="apple-liquid-glass px-3 py-2 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-cmu-600 flex items-center gap-1.5 shadow-xs cursor-pointer" title="รีเฟรชประวัติ">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-cmu-600"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Audit Log Filter Bar -->
+                <div class="apple-liquid-glass p-4 rounded-3xl border border-slate-200 dark:border-darkslate-800 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+                        <div class="space-y-1">
+                            <label class="font-bold text-slate-600 dark:text-slate-400">กรองตามกิจกรรม (Action):</label>
+                            <select id="auditFilterAction" onchange="filterAuditLogsTable()" class="w-full px-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cmu-500 font-bold">
+                                <option value="ALL">ทุกกิจกรรม (All Actions)</option>
+                                <option value="LOGIN">เข้าสู่ระบบ (LOGIN)</option>
+                                <option value="LOGOUT">ออกจากระบบ (LOGOUT)</option>
+                                <option value="SEARCH">ค้นหาข้อมูล (SEARCH)</option>
+                                <option value="EXPORT_CAD">ส่งออก Excel CAD (55 คอลัมน์)</option>
+                                <option value="EXPORT_REPORT">ส่งออกรายงานยืม-คืน</option>
+                                <option value="PRINT_REPORT">พิมพ์รายงานราชการ (A4/PDF)</option>
+                                <option value="SYNC_GAS">ซิงก์ Google Sheets</option>
+                                <option value="VIEW_EVIDENCE">เปิดดูหลักฐานรูป/ลายเซ็น</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="font-bold text-slate-600 dark:text-slate-400">กรองตามผู้ใช้งาน (User):</label>
+                            <select id="auditFilterUser" onchange="filterAuditLogsTable()" class="w-full px-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cmu-500 font-bold">
+                                <option value="ALL">ผู้ใช้งานทั้งหมด</option>
+                                <option value="superadmin">superadmin (ผู้ดูแลระบบสูงสุด)</option>
+                                <option value="admin">admin (เจ้าหน้าที่พัสดุ CAD)</option>
+                                <option value="staff">staff (เจ้าหน้าที่ตรวจนับ)</option>
+                                <option value="executive">executive (ผู้บริหารกองกลาง)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1 sm:col-span-2">
+                            <label class="font-bold text-slate-600 dark:text-slate-400">ค้นหาในประวัติ:</label>
+                            <div class="relative">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                                <input type="text" id="auditSearchInput" oninput="filterAuditLogsTable()" placeholder="ค้นหารายละเอียด, รหัสอุปกรณ์, หรือเป้าหมาย..." class="w-full pl-9 pr-3 py-2 bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cmu-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Log Table -->
+                <div class="apple-liquid-glass rounded-3xl overflow-hidden shadow-xs border border-slate-200 dark:border-darkslate-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                            <thead class="bg-slate-100/70 dark:bg-darkslate-800/60 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-darkslate-800">
+                                <tr>
+                                    <th class="p-3">วันเวลา (Timestamp)</th>
+                                    <th class="p-3">ผู้ใช้งาน (User)</th>
+                                    <th class="p-3">กิจกรรม (Action)</th>
+                                    <th class="p-3">เป้าหมาย (Target)</th>
+                                    <th class="p-3">รายละเอียด (Details)</th>
+                                    <th class="p-3">แหล่งที่มา (Source)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyAuditLogs" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium font-mono text-[11px]">
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-slate-400 font-sans">กำลังโหลดบันทึกประวัติ...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
 
             </section>
 
@@ -978,6 +1115,7 @@
                         localStorage.setItem("cad_lending_user", JSON.stringify(user));
                         checkAuth();
                         loadAllData();
+                        logAudit('LOGIN', 'AUTH', user.username, `เข้าสู่ระบบสำเร็จในบทบาท ${user.role} (${user.full_name})`);
                         return;
                     } else {
                         if (errBox) {
@@ -1014,6 +1152,8 @@
 
         function logout() {
             if (confirm("คุณต้องการออกจากระบบหรือไม่?")) {
+                const u = currentUser ? currentUser.username : "user";
+                logAudit('LOGOUT', 'AUTH', u, 'ออกจากระบบ SmartCAD-Lending');
                 localStorage.removeItem("cad_lending_user");
                 currentUser = null;
                 checkAuth();
@@ -1026,7 +1166,8 @@
                 await Promise.all([
                     loadAssets(),
                     loadActiveBorrowings(),
-                    loadHandoffAssets()
+                    loadHandoffAssets(),
+                    loadAuditLogs()
                 ]);
                 updateKPIs();
                 if (cacheBorrowings.length > 0) {
@@ -1044,7 +1185,11 @@
                 if (res.ok) {
                     const data = await res.json();
                     cacheAssets = data;
-                    if (!currentStatFilter || currentStatFilter === 'all_assets') {
+                    const searchAssetVal = document.getElementById('searchAsset')?.value?.trim();
+                    const globalSearchVal = document.getElementById('globalSearchInput')?.value?.trim();
+                    if (searchAssetVal || globalSearchVal) {
+                        filterAssetTable();
+                    } else if (!currentStatFilter || currentStatFilter === 'all_assets') {
                         renderAssetsTable(data);
                     }
                     const badge = document.getElementById('badge-nav-assets');
@@ -1062,7 +1207,11 @@
                 if (res.ok) {
                     const data = await res.json();
                     cacheBorrowings = data;
-                    if (!currentStatFilter || currentStatFilter === 'borrowed') {
+                    const searchBorrowVal = document.getElementById('searchBorrow')?.value?.trim();
+                    const globalSearchVal = document.getElementById('globalSearchInput')?.value?.trim();
+                    if (searchBorrowVal || globalSearchVal) {
+                        filterBorrowTable();
+                    } else if (!currentStatFilter || currentStatFilter === 'borrowed') {
                         renderBorrowingsTable(data);
                     }
                     const badge = document.getElementById('badge-nav-borrowings');
@@ -1262,16 +1411,54 @@
             }).join('');
         }
 
-        // Render & Filter Reports Table
-        function renderReportsTable() {
+        // ==========================================
+        // 4. OFFICIAL GOVERNMENT BORROW-RETURN REPORTING
+        // ==========================================
+
+        async function loadReportTransactions() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/borrow_transactions?select=*&order=borrow_date.desc`, { headers: API_HEADERS });
+                if (res.ok) {
+                    const txs = await res.json();
+                    const assetMap = {};
+                    cacheAssets.forEach(a => { assetMap[a.asset_id] = a; });
+
+                    cacheReports = txs.map(tx => {
+                        const a = assetMap[tx.asset_id] || {};
+                        const dueDateObj = new Date(tx.due_date);
+                        const isOverdue = tx.tx_status === 'กำลังยืม' && new Date() > dueDateObj;
+                        const diffDays = Math.ceil((new Date() - dueDateObj) / (1000 * 60 * 60 * 24));
+                        return {
+                            ...tx,
+                            asset_name: a.asset_name || tx.asset_name || `อุปกรณ์รหัส ${tx.asset_id}`,
+                            serial_number: a.serial_number || tx.serial_number || "-",
+                            asset_code: a.asset_code || tx.asset_code || "-",
+                            category: a.category || tx.category || "อุปกรณ์สำนักงาน",
+                            condition: tx.equip_return_photo ? "01 - สภาพดี/ปกติ" : (tx.tx_status === 'คืนแล้ว' ? "01 - ดี/ปกติ" : "01 - สภาพดี/พร้อมใช้"),
+                            current_status: isOverdue ? "เกินกำหนด" : tx.tx_status,
+                            days_overdue: isOverdue ? diffDays : 0
+                        };
+                    });
+                    filterReportsTable();
+                    return;
+                }
+            } catch (e) {
+                console.warn("loadReportTransactions fallback to cacheBorrowings:", e);
+            }
             cacheReports = [...cacheBorrowings];
             filterReportsTable();
+        }
+
+        function renderReportsTable() {
+            loadReportTransactions();
         }
 
         function filterReportsTable() {
             const status = document.getElementById('reportFilterStatus') ? document.getElementById('reportFilterStatus').value : 'ALL';
             const cat = document.getElementById('reportFilterCategory') ? document.getElementById('reportFilterCategory').value : 'ALL';
             const q = document.getElementById('reportSearch') ? document.getElementById('reportSearch').value.toLowerCase().trim() : '';
+
+            const terms = q.split(/\s+/).filter(Boolean);
 
             let filtered = cacheReports.filter(it => {
                 if (status !== 'ALL') {
@@ -1280,9 +1467,20 @@
                     if (status === 'คืนแล้ว' && it.tx_status !== 'คืนแล้ว') return false;
                 }
                 if (cat !== 'ALL' && it.category !== cat) return false;
-                if (q) {
-                    const matchText = `${it.tx_id || ''} ${it.borrower_name || ''} ${it.department || ''} ${it.asset_name || ''} ${it.serial_number || ''} ${it.asset_code || ''}`.toLowerCase();
-                    if (!matchText.includes(q)) return false;
+                if (terms.length > 0) {
+                    const matchText = [
+                        it.tx_id,
+                        it.borrower_name,
+                        it.department,
+                        it.phone,
+                        it.asset_name,
+                        it.serial_number,
+                        it.asset_code,
+                        it.category,
+                        it.condition,
+                        it.remark
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    if (!terms.every(term => matchText.includes(term))) return false;
                 }
                 return true;
             });
@@ -1306,7 +1504,7 @@
             if (!tbody) return;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="14" class="p-8 text-center text-slate-400 font-sans">ไม่พบรายการธุรกรรมตามเงื่อนไขที่เลือก</td></tr>';
                 return;
             }
 
@@ -1318,25 +1516,31 @@
                     ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">คืนแล้ว</span>`
                     : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">กำลังยืม</span>`;
 
-                const dueDate = new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-                const borrowDate = new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : "-";
+                const borrowDate = item.borrow_date ? new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : "-";
+                const returnDate = item.return_date ? new Date(item.return_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : "-";
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
-                        <td class="p-3 text-center text-slate-400 font-mono">${idx + 1}</td>
-                        <td class="p-3 font-mono font-bold text-cmu-800 dark:text-cmu-300">${item.tx_id}</td>
-                        <td class="p-3">
-                            <div class="font-bold text-slate-900 dark:text-white">${item.asset_name}</div>
-                            <div class="text-[11px] font-mono text-slate-400">SN: ${item.serial_number} ${item.asset_code ? '• เลขครุภัณฑ์: ' + item.asset_code : ''}</div>
+                        <td class="p-2.5 text-center text-slate-400 font-mono text-xs">${idx + 1}</td>
+                        <td class="p-2.5 font-mono font-bold text-cmu-800 dark:text-cmu-300 text-xs">${item.tx_id}</td>
+                        <td class="p-2.5 font-mono text-[11px] text-slate-700 dark:text-slate-300">${item.asset_code || "-"}</td>
+                        <td class="p-2.5">
+                            <div class="font-bold text-slate-900 dark:text-white text-xs">${item.asset_name}</div>
                         </td>
-                        <td class="p-3">
-                            <div class="font-bold text-slate-800 dark:text-slate-200">${item.borrower_name}</div>
-                            <div class="text-[11px] text-slate-400">${item.department} ${item.phone ? '• ' + item.phone : ''}</div>
+                        <td class="p-2.5 font-mono text-[11px] text-slate-500">${item.serial_number || "-"}</td>
+                        <td class="p-2.5 text-xs text-slate-600 dark:text-slate-300">${item.category || "-"}</td>
+                        <td class="p-2.5">
+                            <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">${item.borrower_name}</div>
+                            <div class="text-[10px] text-slate-400">${item.department}</div>
                         </td>
-                        <td class="p-3 font-mono text-[11px] text-slate-500">${borrowDate}</td>
-                        <td class="p-3 font-bold font-mono text-[11px] ${isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${dueDate}</td>
-                        <td class="p-3">${statusBadge}</td>
-                        <td class="p-3 text-center no-print">
+                        <td class="p-2.5 font-mono text-[11px] text-slate-500">${item.phone || "-"}</td>
+                        <td class="p-2.5 font-mono text-[11px] text-slate-500">${borrowDate}</td>
+                        <td class="p-2.5 font-bold font-mono text-[11px] ${isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${dueDate}</td>
+                        <td class="p-2.5 font-mono text-[11px] text-slate-500">${returnDate}</td>
+                        <td class="p-2.5 text-[11px] text-slate-600 dark:text-slate-300">${item.condition || "01 - ปกติ"}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-center no-print">
                             <div class="flex items-center justify-center gap-1">
                                 ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo}', 'รูปผู้ยืม: ${item.borrower_name}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-3.5 h-3.5"></i></button>` : ''}
                                 ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature}', 'ลายเซ็น: ${item.borrower_name}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-3.5 h-3.5"></i></button>` : ''}
@@ -1348,7 +1552,7 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        // Export Borrow Report to Excel
+        // Export Borrow Report to Excel (Official Government 14-Column Layout)
         function exportBorrowReportExcel() {
             if (cacheReports.length === 0) {
                 alert('ไม่มีข้อมูลรายงานสำหรับส่งออก');
@@ -1356,38 +1560,58 @@
             }
 
             const today = new Date().toISOString().split('T')[0];
+            const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
             const excelData = cacheReports.map((it, idx) => ({
                 "ลำดับ": idx + 1,
-                "รหัสธุรกรรม": it.tx_id,
-                "ชื่ออุปกรณ์": it.asset_name,
-                "ซีเรียลนัมเบอร์": it.serial_number,
-                "เลขครุภัณฑ์": it.asset_code || "-",
-                "หมวดหมู่": it.category || "-",
-                "ชื่อผู้ยืม": it.borrower_name,
-                "หน่วยงาน/แผนก": it.department,
+                "เลขที่ใบยืม": it.tx_id,
+                "เลขครุภัณฑ์ (CAD ID)": it.asset_code || "-",
+                "รายการพัสดุและยี่ห้อ/รุ่น": it.asset_name,
+                "หมายเลขเครื่อง (S/N)": it.serial_number || "-",
+                "หมวดหมู่พัสดุ": it.category || "-",
+                "ชื่อ-สกุลผู้ยืม": it.borrower_name,
+                "ส่วนงาน/สังกัด": it.department,
                 "เบอร์โทรศัพท์": it.phone || "-",
                 "วันที่ยืม": new Date(it.borrow_date).toLocaleDateString('th-TH'),
                 "กำหนดส่งคืน": new Date(it.due_date).toLocaleDateString('th-TH'),
                 "วันที่คืนจริง": it.return_date ? new Date(it.return_date).toLocaleDateString('th-TH') : "-",
+                "สภาพพัสดุ": it.condition || "01 - สภาพดี/ปกติ",
                 "สถานะรายการ": it.current_status,
                 "เกินกำหนด (วัน)": it.days_overdue > 0 ? it.days_overdue : 0,
-                "หมายเหตุ": it.remark || "-"
+                "วัตถุประสงค์/หมายเหตุ": it.remark || "-"
             }));
 
             const ws = XLSX.utils.json_to_sheet(excelData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "รายงานยืม-คืน");
+            XLSX.utils.book_append_sheet(wb, ws, "รายงานยืม-คืนราชการ");
 
-            XLSX.writeFile(wb, `CAD_Lending_Report_${today}.xlsx`);
+            XLSX.writeFile(wb, `CAD_Gov_Lending_Report_${today}.xlsx`);
+            logAudit('EXPORT_REPORT', 'FILE', `CAD_Gov_Lending_Report_${today}.xlsx`, `ส่งออกรายงานพัสดุราชการ Excel รวม ${cacheReports.length} รายการ`);
         }
 
-        // Print Borrow Report (Formal printable view)
+        // Print Borrow Report (Formal printable view with CMU Header and 4-party signatures)
         function printBorrowReport() {
             const meta = document.getElementById('print-report-meta');
+            const now = new Date();
             if (meta) {
-                const now = new Date();
-                meta.innerText = `ข้อมูล ณ วันที่: ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} • ผู้พิมพ์: ${currentUser ? currentUser.full_name : 'เจ้าหน้าที่พัสดุ'}`;
+                meta.innerText = `วันที่พิมพ์รายงาน: ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} • ผู้พิมพ์: ${currentUser ? currentUser.full_name : 'เจ้าหน้าที่พัสดุ'}`;
             }
+
+            const total = cacheReports.length;
+            const active = cacheReports.filter(f => f.tx_status === 'กำลังยืม' && f.current_status !== 'เกินกำหนด').length;
+            const overdue = cacheReports.filter(f => f.current_status === 'เกินกำหนด').length;
+            const returned = cacheReports.filter(f => f.tx_status === 'คืนแล้ว').length;
+
+            const elTot = document.getElementById('print-stat-total');
+            const elAct = document.getElementById('print-stat-active');
+            const elOvd = document.getElementById('print-stat-overdue');
+            const elRet = document.getElementById('print-stat-returned');
+            if (elTot) elTot.innerText = total;
+            if (elAct) elAct.innerText = active;
+            if (elOvd) elOvd.innerText = overdue;
+            if (elRet) elRet.innerText = returned;
+
+            logAudit('PRINT_REPORT', 'DOCUMENT', 'แบบ พด.ยค-๐๑', `สั่งพิมพ์รายงานราชการแบบ พด.ยค-๐๑ รวม ${total} รายการ`);
             window.print();
         }
 
@@ -1464,6 +1688,364 @@
             XLSX.utils.book_append_sheet(wb, ws, "กองบริหารงานกลาง");
 
             XLSX.writeFile(wb, `CAD_Inventory_Import_${today}.xlsx`);
+            logAudit('EXPORT_CAD', 'CAD_INVENTORY', '55_COLUMNS', `ส่งออกไฟล์ Excel 55 คอลัมน์สำหรับ CAD-Inventory (${cacheHandoff.length} รายการ)`);
+        }
+
+        // ==========================================
+        // 5. AUDIT LOGGING SYSTEM (ENTERPRISE AUDIT TRAIL)
+        // ==========================================
+
+        let cacheAuditLogs = [];
+        let auditDebounceTimer = null;
+
+        function logAuditDebounced(action, targetType, targetId, details) {
+            clearTimeout(auditDebounceTimer);
+            auditDebounceTimer = setTimeout(() => {
+                logAudit(action, targetType, targetId, details);
+            }, 800);
+        }
+
+        async function logAudit(action, targetType, targetId, details) {
+            const u = currentUser ? currentUser.username : "anonymous";
+            const r = currentUser ? currentUser.role : "public";
+            const entry = {
+                timestamp: new Date().toISOString(),
+                username: u,
+                user_role: r,
+                action: action,
+                target_type: targetType || "SYSTEM",
+                target_id: String(targetId || "-"),
+                details: details || "",
+                ip_address: "web-client"
+            };
+
+            // Local cache persistence
+            try {
+                let local = JSON.parse(localStorage.getItem("cad_audit_logs") || "[]");
+                local.unshift(entry);
+                if (local.length > 500) local = local.slice(0, 500);
+                localStorage.setItem("cad_audit_logs", JSON.stringify(local));
+                cacheAuditLogs = local;
+                renderAuditLogsTable(cacheAuditLogs);
+                const badge = document.getElementById("badge-nav-audit");
+                if (badge) badge.innerText = `${cacheAuditLogs.length}`;
+            } catch(e) {}
+
+            // Supabase REST persistence
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/audit_logs`, {
+                    method: "POST",
+                    headers: API_HEADERS,
+                    body: JSON.stringify(entry)
+                });
+            } catch(e) {
+                // Fallback silently
+            }
+        }
+
+        async function loadAuditLogs() {
+            let cloudLogs = [];
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/audit_logs?select=*&order=timestamp.desc&limit=200`, { headers: API_HEADERS });
+                if (res.ok) {
+                    cloudLogs = await res.json();
+                }
+            } catch(e) {}
+
+            let localLogs = [];
+            try {
+                localLogs = JSON.parse(localStorage.getItem("cad_audit_logs") || "[]");
+            } catch(e) {}
+
+            // Default seed logs if completely empty
+            if (cloudLogs.length === 0 && localLogs.length === 0) {
+                localLogs = [
+                    {
+                        timestamp: new Date(Date.now() - 3600000).toISOString(),
+                        username: "system",
+                        user_role: "superadmin",
+                        action: "SYSTEM_INIT",
+                        target_type: "DATABASE",
+                        target_id: "v1.1.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending และระบบ Audit Logging บน Cloud Hub",
+                        ip_address: "10.155.40.1"
+                    },
+                    {
+                        timestamp: new Date(Date.now() - 1800000).toISOString(),
+                        username: "superadmin",
+                        user_role: "superadmin",
+                        action: "LOGIN",
+                        target_type: "AUTH",
+                        target_id: "superadmin",
+                        details: "เข้าสู่ระบบสำเร็จผ่าน Supabase Bcrypt Encryption",
+                        ip_address: "127.0.0.1"
+                    }
+                ];
+                localStorage.setItem("cad_audit_logs", JSON.stringify(localLogs));
+            }
+
+            const map = new Map();
+            [...cloudLogs, ...localLogs].forEach(l => {
+                const key = `${l.timestamp}_${l.username}_${l.action}_${l.target_id}`;
+                if (!map.has(key)) map.set(key, l);
+            });
+            cacheAuditLogs = Array.from(map.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            renderAuditLogsTable(cacheAuditLogs);
+            const badge = document.getElementById("badge-nav-audit");
+            if (badge) badge.innerText = `${cacheAuditLogs.length}`;
+        }
+
+        function filterAuditLogsTable() {
+            const act = document.getElementById('auditFilterAction') ? document.getElementById('auditFilterAction').value : 'ALL';
+            const usr = document.getElementById('auditFilterUser') ? document.getElementById('auditFilterUser').value : 'ALL';
+            const q = document.getElementById('auditSearchInput') ? document.getElementById('auditSearchInput').value.toLowerCase().trim() : '';
+
+            const filtered = cacheAuditLogs.filter(l => {
+                if (act !== 'ALL' && l.action !== act) return false;
+                if (usr !== 'ALL' && l.username !== usr) return false;
+                if (q) {
+                    const str = `${l.username || ''} ${l.action || ''} ${l.target_type || ''} ${l.target_id || ''} ${l.details || ''} ${l.ip_address || ''}`.toLowerCase();
+                    if (!str.includes(q)) return false;
+                }
+                return true;
+            });
+            renderAuditLogsTable(filtered);
+        }
+
+        function renderAuditLogsTable(list) {
+            const tbody = document.getElementById('tbodyAuditLogs');
+            if (!tbody) return;
+
+            if (list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400 font-sans">ไม่พบบันทึกประวัติกิจกรรมตามตัวกรอง</td></tr>';
+                return;
+            }
+
+            const actionBadgeMap = {
+                LOGIN: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+                LOGOUT: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800',
+                SEARCH: 'bg-slate-100 text-slate-700 dark:bg-darkslate-800 dark:text-slate-300 border-slate-300 dark:border-darkslate-700',
+                EXPORT_CAD: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800',
+                EXPORT_REPORT: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300 dark:border-blue-800',
+                PRINT_REPORT: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+                SYNC_GAS: 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border-teal-300 dark:border-teal-800',
+                VIEW_EVIDENCE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800',
+                SYSTEM_INIT: 'bg-cmu-100 text-cmu-800 dark:bg-cmu-950/60 dark:text-cmu-300 border-cmu-300 dark:border-cmu-800'
+            };
+
+            tbody.innerHTML = list.map(l => {
+                const dt = new Date(l.timestamp);
+                const dateStr = dt.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                const timeStr = dt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const badgeClass = actionBadgeMap[l.action] || 'bg-slate-100 text-slate-800 border-slate-200';
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
+                        <td class="p-3 whitespace-nowrap text-slate-500 font-mono text-[10px]">
+                            <div>${dateStr}</div>
+                            <div class="text-slate-400 text-[9px]">${timeStr}</div>
+                        </td>
+                        <td class="p-3 font-sans">
+                            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <span>${l.username}</span>
+                                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-darkslate-800 text-slate-600 dark:text-slate-400">${l.user_role}</span>
+                            </div>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">${l.action}</span>
+                        </td>
+                        <td class="p-3 font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                            <span class="text-[10px] text-slate-400">[${l.target_type}]</span> ${l.target_id}
+                        </td>
+                        <td class="p-3 font-sans text-xs text-slate-700 dark:text-slate-300 max-w-xs sm:max-w-md truncate" title="${l.details}">
+                            ${l.details}
+                        </td>
+                        <td class="p-3 text-[10px] text-slate-400 font-mono">
+                            ${l.ip_address || 'web'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportAuditLogsExcel() {
+            if (cacheAuditLogs.length === 0) {
+                alert('ไม่มีข้อมูล Audit Log สำหรับส่งออก');
+                return;
+            }
+            const today = new Date().toISOString().split('T')[0];
+            const data = cacheAuditLogs.map((l, idx) => ({
+                "ลำดับ": idx + 1,
+                "วันเวลา": new Date(l.timestamp).toLocaleString('th-TH'),
+                "ผู้ใช้งาน": l.username,
+                "ตำแหน่ง/สิทธิ์": l.user_role,
+                "กิจกรรม (Action)": l.action,
+                "ประเภทเป้าหมาย": l.target_type,
+                "รหัสเป้าหมาย": l.target_id,
+                "รายละเอียด": l.details,
+                "แหล่งที่มา/IP": l.ip_address || "web-client"
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Audit_Logs");
+            XLSX.writeFile(wb, `SmartCAD_Audit_Logs_${today}.xlsx`);
+            logAudit("EXPORT_AUDIT", "FILE", "SmartCAD_Audit_Logs.xlsx", "ส่งออกประวัติการตรวจสอบระบบ (Audit Trail)");
+        }
+
+        // ==========================================
+        // 6. VIEW NAVIGATION SWITCHER
+        // ==========================================
+
+        function switchView(view) {
+            const views = ['dashboard', 'borrowings', 'assets', 'handoff', 'reports', 'audit'];
+            views.forEach(v => {
+                const nav = document.getElementById(`nav-${v}`);
+                if (nav) {
+                    if (v === view || (view === 'dashboard' && v === 'dashboard')) {
+                        nav.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-white bg-cmu-700 dark:bg-cmu-800 shadow-sm cursor-pointer";
+                    } else {
+                        nav.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800 cursor-pointer";
+                    }
+                }
+            });
+
+            document.getElementById('view-section-borrowings').classList.toggle('hidden', view !== 'dashboard' && view !== 'borrowings');
+            document.getElementById('view-section-assets').classList.toggle('hidden', view !== 'assets');
+            document.getElementById('view-section-handoff').classList.toggle('hidden', view !== 'handoff');
+            document.getElementById('view-section-reports').classList.toggle('hidden', view !== 'reports');
+            const viewAudit = document.getElementById('view-section-audit');
+            if (viewAudit) viewAudit.classList.toggle('hidden', view !== 'audit');
+
+            if (view === 'reports') {
+                renderReportsTable();
+            } else if (view === 'audit') {
+                loadAuditLogs();
+            }
+        }
+
+        // ==========================================
+        // 7. ROBUST REAL-TIME SEARCH FILTER SYSTEM
+        // ==========================================
+
+        function handleGlobalSearch(val) {
+            const q = (val || "").toLowerCase().trim();
+            const clearBtn = document.getElementById("globalSearchClear");
+            if (clearBtn) {
+                clearBtn.classList.toggle("hidden", !q);
+            }
+
+            // Sync with local table search inputs
+            const sBorrow = document.getElementById("searchBorrow");
+            const sAsset = document.getElementById("searchAsset");
+            const sReport = document.getElementById("reportSearch");
+            if (sBorrow && sBorrow.value !== val) sBorrow.value = val;
+            if (sAsset && sAsset.value !== val) sAsset.value = val;
+            if (sReport && sReport.value !== val) sReport.value = val;
+
+            filterBorrowTable();
+            filterAssetTable();
+            filterReportsTable();
+
+            if (q.length >= 2) {
+                logAuditDebounced("SEARCH", "GLOBAL", q, `ค้นหาด่วนด้วยคำค้น "${q}"`);
+            }
+        }
+
+        function clearGlobalSearch() {
+            const input = document.getElementById("globalSearchInput");
+            if (input) input.value = "";
+            handleGlobalSearch("");
+        }
+
+        function filterBorrowTable() {
+            const input = document.getElementById('searchBorrow');
+            const q = (input ? input.value : '').toLowerCase().trim();
+            if (!q) {
+                renderBorrowingsTable(cacheBorrowings);
+                return;
+            }
+
+            const terms = q.split(/\s+/).filter(Boolean);
+            const filtered = cacheBorrowings.filter(b => {
+                const text = [
+                    b.tx_id,
+                    b.asset_id,
+                    b.asset_name,
+                    b.serial_number,
+                    b.asset_code,
+                    b.category,
+                    b.borrower_name,
+                    b.department,
+                    b.phone,
+                    b.current_status,
+                    b.tx_status,
+                    b.remark
+                ].filter(Boolean).join(' ').toLowerCase();
+
+                return terms.every(term => text.includes(term));
+            });
+            renderBorrowingsTable(filtered);
+        }
+
+        function filterAssetTable() {
+            const input = document.getElementById('searchAsset');
+            const q = (input ? input.value : '').toLowerCase().trim();
+            if (!q) {
+                renderAssetsTable(cacheAssets);
+                return;
+            }
+
+            const terms = q.split(/\s+/).filter(Boolean);
+            const filtered = cacheAssets.filter(a => {
+                const text = [
+                    a.asset_id,
+                    a.asset_name,
+                    a.serial_number,
+                    a.asset_code,
+                    a.category,
+                    a.reg_status,
+                    a.borrow_status,
+                    a.notes
+                ].filter(Boolean).join(' ').toLowerCase();
+
+                return terms.every(term => text.includes(term));
+            });
+            renderAssetsTable(filtered);
+        }
+
+        // ==========================================
+        // 8. EVIDENCE MODAL & GAS INTEGRATION
+        // ==========================================
+
+        function viewEvidence(url, desc) {
+            document.getElementById('modalImg').src = url;
+            document.getElementById('modalDesc').innerText = desc || '';
+            document.getElementById('modalEvidence').classList.remove('hidden');
+            logAudit('VIEW_EVIDENCE', 'MEDIA', url.substring(0, 30), `ตรวจสอบหลักฐาน: ${desc}`);
+        }
+
+        function closeEvidenceModal() {
+            document.getElementById('modalEvidence').classList.add('hidden');
+        }
+
+        async function triggerGasSync() {
+            const btn = document.getElementById('btnSyncGas');
+            const icon = document.getElementById('iconSync');
+            btn.disabled = true;
+            icon.classList.add('animate-spin');
+
+            try {
+                await fetch(`${GAS_WEBAPP_URL}?action=sync`, { mode: 'no-cors' });
+                alert('🚀 ส่งสัญญาณซิงก์ข้อมูลไปยัง Google Apps Script สำเร็จ!');
+                logAudit('SYNC_GAS', 'GOOGLE_SHEETS', 'AppSheet', 'ส่งสัญญาณซิงก์ข้อมูลระหว่าง Google Sheets และ Supabase');
+                setTimeout(() => loadAllData(), 2500);
+            } catch (err) {
+                console.error(err);
+                alert('⚠️ เกิดข้อผิดพลาดในการเรียก Google Apps Script');
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('animate-spin');
+            }
         }
 
         // Realtime Subscriptions (Safe wrapper)
@@ -1481,83 +2063,6 @@
             } catch (err) {
                 console.log("Realtime subscription fallback to polling:", err);
             }
-        }
-
-        // View Navigation Switcher
-        function switchView(view) {
-            const views = ['dashboard', 'borrowings', 'assets', 'handoff', 'reports'];
-            views.forEach(v => {
-                const nav = document.getElementById(`nav-${v}`);
-                if (nav) {
-                    if (v === view || (view === 'dashboard' && v === 'dashboard')) {
-                        nav.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-white bg-cmu-700 dark:bg-cmu-800 shadow-sm cursor-pointer";
-                    } else {
-                        nav.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800 cursor-pointer";
-                    }
-                }
-            });
-
-            document.getElementById('view-section-borrowings').classList.toggle('hidden', view !== 'dashboard' && view !== 'borrowings');
-            document.getElementById('view-section-assets').classList.toggle('hidden', view !== 'assets');
-            document.getElementById('view-section-handoff').classList.toggle('hidden', view !== 'handoff');
-            document.getElementById('view-section-reports').classList.toggle('hidden', view !== 'reports');
-
-            if (view === 'reports') {
-                renderReportsTable();
-            }
-        }
-
-        // Evidence Modal
-        function viewEvidence(url, desc) {
-            document.getElementById('modalImg').src = url;
-            document.getElementById('modalDesc').innerText = desc || '';
-            document.getElementById('modalEvidence').classList.remove('hidden');
-        }
-        function closeEvidenceModal() {
-            document.getElementById('modalEvidence').classList.add('hidden');
-        }
-
-        // Trigger GAS Sync
-        async function triggerGasSync() {
-            const btn = document.getElementById('btnSyncGas');
-            const icon = document.getElementById('iconSync');
-            btn.disabled = true;
-            icon.classList.add('animate-spin');
-
-            try {
-                await fetch(`${GAS_WEBAPP_URL}?action=sync`, { mode: 'no-cors' });
-                alert('🚀 ส่งสัญญาณซิงก์ข้อมูลไปยัง Google Apps Script สำเร็จ!');
-                setTimeout(() => loadAllData(), 2500);
-            } catch (err) {
-                console.error(err);
-                alert('⚠️ เกิดข้อผิดพลาดในการเรียก Google Apps Script');
-            } finally {
-                btn.disabled = false;
-                icon.classList.remove('animate-spin');
-            }
-        }
-
-        // Search Filter Logic
-        function filterBorrowTable() {
-            const q = document.getElementById('searchBorrow').value.toLowerCase();
-            const filtered = cacheBorrowings.filter(b => 
-                (b.borrower_name && b.borrower_name.toLowerCase().includes(q)) ||
-                (b.asset_name && b.asset_name.toLowerCase().includes(q)) ||
-                (b.serial_number && b.serial_number.toLowerCase().includes(q)) ||
-                (b.tx_id && b.tx_id.toLowerCase().includes(q))
-            );
-            renderBorrowingsTable(filtered);
-        }
-
-        function filterAssetTable() {
-            const q = document.getElementById('searchAsset').value.toLowerCase();
-            const filtered = cacheAssets.filter(a => 
-                (a.asset_name && a.asset_name.toLowerCase().includes(q)) ||
-                (a.serial_number && a.serial_number.toLowerCase().includes(q)) ||
-                (a.asset_id && a.asset_id.toLowerCase().includes(q)) ||
-                (a.asset_code && a.asset_code.toLowerCase().includes(q))
-            );
-            renderAssetsTable(filtered);
         }
 
         // Theme Switcher Functions

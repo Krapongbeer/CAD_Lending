@@ -21,6 +21,9 @@
      - สร้างตาราง `system_users` พร้อม Row Level Security (RLS) บล็อกการอ่านจาก Public 100%
      - สร้าง Stored Procedure `authenticate_user(p_username, p_password)` พร้อมกลไกป้องกัน Timing Attack
      - ซิงก์บัญชีผู้ใช้งานเริ่มต้น (`superadmin`, `admin`, `staff`, `executive`) ด้วย Bcrypt Hash ตรงกับ CAD-Inventory 100%
+   - **📜 Enterprise Audit Logging System (ระบบบันทึกประวัติการตรวจสอบตามมาตรฐานสากล):**
+     - สร้างตาราง `audit_logs` พร้อม RLS และ Index ความเร็วสูงสำหรับจัดเก็บบันทึกประวัติ (Audit Trail)
+     - บันทึกทุกกิจกรรม: เข้าสู่ระบบ, ออกจากระบบ, ค้นหาข้อมูล, ส่งออก CAD Excel, พิมพ์รายงานราชการ, ซิงก์ข้อมูล
 
 ---
 
