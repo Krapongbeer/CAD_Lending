@@ -290,7 +290,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.2.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.3.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -386,7 +386,16 @@
                             <div class="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-500/20"><i data-lucide="shield-alert" class="w-4 h-4"></i></div>
                             <span>บันทึกประวัติ (Audit Log)</span>
                         </div>
-                        <span id="badge-nav-audit" class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">Security</span>
+                        <span id="badge-nav-audit" class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">90 วัน</span>
+                    </button>
+
+                    <!-- User Management (Visible for superadmin only) -->
+                    <button onclick="switchView('users')" id="nav-users" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800 cursor-pointer hidden">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-500/20"><i data-lucide="users" class="w-4 h-4"></i></div>
+                            <span>จัดการผู้ใช้งาน (Users)</span>
+                        </div>
+                        <span id="badge-nav-users" class="text-[9px] font-mono px-2 py-0.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800">Superadmin</span>
                     </button>
                 </div>
 
@@ -420,7 +429,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.2.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.3.0</span>
                 </div>
             </div>
         </aside>
@@ -684,7 +693,7 @@
                         </div>
                         <div class="flex-1 text-center">
                             <h2 class="text-sm font-black tracking-tight uppercase">มหาวิทยาลัยเชียงใหม่ • CHIANG MAI UNIVERSITY</h2>
-                            <h3 class="text-xs font-bold text-slate-700">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย (งานพัสดุและยานพาหนะ)</h3>
+                            <h3 class="text-xs font-bold text-slate-700">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย (งานพัสดุและครุภัณฑ์)</h3>
                             <h1 class="text-base font-black mt-1 text-slate-950">แบบรายงานสรุปและตรวจสอบการยืม - คืนพัสดุและครุภัณฑ์ราชการ</h1>
                             <p class="text-[10px] text-slate-600">ตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙</p>
                         </div>
@@ -845,10 +854,10 @@
                         <div class="text-[9px]">วันที่ ......./......./...........</div>
                     </div>
                     <div class="space-y-4">
-                        <div class="font-bold">๓. หัวหน้างานพัสดุและยานพาหนะ</div>
+                        <div class="font-bold">๓. หัวหน้างานพัสดุและครุภัณฑ์</div>
                         <div class="pt-6">ลงชื่อ......................................................</div>
                         <div>(......................................................)</div>
-                        <div class="text-[9px] text-slate-600">หัวหน้างานพัสดุและยานพาหนะ</div>
+                        <div class="text-[9px] text-slate-600">หัวหน้างานพัสดุและครุภัณฑ์</div>
                         <div class="text-[9px]">วันที่ ......./......./...........</div>
                     </div>
                     <div class="space-y-4">
@@ -867,15 +876,15 @@
                 <div class="apple-liquid-glass p-5 rounded-3xl border border-blue-200 dark:border-blue-900/50 bg-gradient-to-r from-blue-500/10 via-cmu-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-[10px] font-bold font-mono">ISO/IEC 27001 Audit Trail</span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-[10px] font-bold font-mono">ISO/IEC 27001 Audit Trail (90 Days)</span>
                             <span class="text-xs text-slate-400">•</span>
-                            <span class="text-xs text-slate-500 dark:text-slate-400">มาตรการความปลอดภัยและธรรมาภิบาลข้อมูล</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">เก็บรักษาประวัติย้อนหลัง 90 วันตามมาตรฐานความปลอดภัย</span>
                         </div>
                         <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display mt-1 flex items-center gap-2">
                             <i data-lucide="shield-check" class="w-5 h-5 text-blue-600"></i>
                             <span>บันทึกประวัติการใช้งานและตรวจสอบระบบ (System Audit Log)</span>
                         </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">บันทึกทุกกิจกรรมการเข้าสู่ระบบ, การยืม-คืน, การส่งออกข้อมูล CAD และการค้นหาข้อมูล เพื่อความโปร่งใสและตรวจสอบได้</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">บันทึกทุกกิจกรรมการเข้าสู่ระบบ, การยืม-คืน, การส่งออกข้อมูล และการจัดการสิทธิ์ เพื่อความโปร่งใสและตรวจสอบย้อนหลังได้ 90 วัน</p>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -898,6 +907,7 @@
                                 <option value="ALL">ทุกกิจกรรม (All Actions)</option>
                                 <option value="LOGIN">เข้าสู่ระบบ (LOGIN)</option>
                                 <option value="LOGOUT">ออกจากระบบ (LOGOUT)</option>
+                                <option value="USER_MANAGEMENT">จัดการผู้ใช้งาน (USER_MGMT)</option>
                                 <option value="SEARCH">ค้นหาข้อมูล (SEARCH)</option>
                                 <option value="EXPORT_CAD">ส่งออก Excel CAD (55 คอลัมน์)</option>
                                 <option value="EXPORT_REPORT">ส่งออกรายงานยืม-คืน</option>
@@ -950,6 +960,89 @@
                 </div>
             </section>
 
+            <!-- SECTION: USER MANAGEMENT (SUPERADMIN ONLY) -->
+            <section id="view-section-users" class="space-y-4 hidden">
+                <div class="apple-liquid-glass p-5 rounded-3xl border border-indigo-200 dark:border-indigo-900/50 bg-gradient-to-r from-indigo-500/10 via-cmu-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold font-mono">RBAC Security (Role-Based Access Control)</span>
+                            <span class="text-xs text-slate-400">•</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-400">ระบบจัดการผู้ใช้งานและกำหนดสิทธิ์</span>
+                        </div>
+                        <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display mt-1 flex items-center gap-2">
+                            <i data-lucide="user-cog" class="w-5 h-5 text-indigo-600"></i>
+                            <span>จัดการผู้ใช้งานระบบ (User Management)</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">เพิ่ม ลบ และเปิด/ปิดการใช้งานบัญชีผู้ใช้งาน พร้อมจัดระดับสิทธิ์ตามตำแหน่งราชการ</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="openAddUserModal()" class="px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition active:scale-95 cursor-pointer">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span>เพิ่มผู้ใช้งานใหม่</span>
+                        </button>
+                        <button onclick="loadSystemUsers()" class="apple-liquid-glass px-3 py-2 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 flex items-center gap-1.5 shadow-xs cursor-pointer" title="รีเฟรชรายชื่อ">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-indigo-600"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Roles Matrix Overview Card -->
+                <div class="apple-liquid-glass p-4 rounded-3xl border border-slate-200 dark:border-darkslate-800">
+                    <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                        <i data-lucide="shield" class="w-4 h-4 text-indigo-500"></i>
+                        <span>สรุปสิทธิ์การเข้าถึงตามบทบาท (Role Matrix):</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-darkslate-900/60 border border-slate-200 dark:border-darkslate-800 space-y-1">
+                            <div class="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                                <span>👑 Superadmin</span>
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400 leading-relaxed">สิทธิ์สูงสุด: จัดการผู้ใช้งาน (เพิ่ม/ลบ), ดูแลระบบความปลอดภัย, Export CAD, ดู Audit Log, จัดการครุภัณฑ์</p>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-darkslate-900/60 border border-slate-200 dark:border-darkslate-800 space-y-1">
+                            <div class="font-bold text-cmu-700 dark:text-cmu-400 flex items-center gap-1.5">
+                                <span>📦 Admin CAD (พัสดุ)</span>
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400 leading-relaxed">เจ้าหน้าที่พัสดุ: จัดการยืม-คืน, ลงทะเบียนครุภัณฑ์ใหม่, ส่งออกไฟล์ CAD 55 คอลัมน์, ออกรายงานยืม-คืน, ดู Audit Log</p>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-darkslate-900/60 border border-slate-200 dark:border-darkslate-800 space-y-1">
+                            <div class="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                <span>📊 Executive (ผู้บริหาร)</span>
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400 leading-relaxed">ผู้บริหารกองกลาง: ดู Dashboard ภาพรวม, ตรวจสอบรายการยืม-คืน, สั่งพิมพ์รายงานราชการ (A4/PDF), ดู Audit Log</p>
+                        </div>
+                        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-darkslate-900/60 border border-slate-200 dark:border-darkslate-800 space-y-1">
+                            <div class="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                                <span>📱 Staff Auditor (ตรวจนับ)</span>
+                            </div>
+                            <p class="text-slate-500 dark:text-slate-400 leading-relaxed">เจ้าหน้าที่ตรวจนับ: ค้นหาและดูสถานะอุปกรณ์, ดูรายการยืม-คืน, ตรวจสอบสภาพอุปกรณ์ ไม่สามารถแก้ไขผู้ใช้หรือส่งออก CAD ได้</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Table -->
+                <div class="apple-liquid-glass rounded-3xl overflow-hidden shadow-xs border border-slate-200 dark:border-darkslate-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600 dark:text-slate-300">
+                            <thead class="bg-slate-100/70 dark:bg-darkslate-800/60 text-slate-700 dark:text-slate-200 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-darkslate-800">
+                                <tr>
+                                    <th class="p-3">ผู้ใช้งาน (Username)</th>
+                                    <th class="p-3">ชื่อ-นามสกุล</th>
+                                    <th class="p-3">บทบาท / สิทธิ์ (Role)</th>
+                                    <th class="p-3">หน่วยงาน (Department)</th>
+                                    <th class="p-3">สถานะบัญชี</th>
+                                    <th class="p-3 text-center">การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyUsers" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-slate-400 font-sans">กำลังโหลดรายชื่อผู้ใช้งาน...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
         </main>
@@ -983,6 +1076,71 @@
         </div>
     </div>
 
+    <!-- MODAL: ADD / EDIT USER (SUPERADMIN ONLY) -->
+    <div id="modalAddUser" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="apple-liquid-glass rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-white/20 dark:border-darkslate-700 bg-white dark:bg-darkslate-900">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-indigo-600"></i>
+                    <span>เพิ่มบัญชีผู้ใช้งานใหม่</span>
+                </h3>
+                <button onclick="closeAddUserModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-xl transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="handleSaveUser(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ชื่อผู้ใช้งาน (Username) *</label>
+                    <input type="text" id="newUsername" required placeholder="เช่น auditor1, parcel_officer" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-xs">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">รหัสผ่าน (Password) *</label>
+                    <input type="password" id="newPassword" required placeholder="อย่างน้อย 6 ตัวอักษร" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">ชื่อ-นามสกุล (Full Name) *</label>
+                    <input type="text" id="newFullName" required placeholder="เช่น นายสมชาย ใจดี" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">สิทธิ์การใช้งาน (Role) *</label>
+                        <select id="newRole" required class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold text-xs">
+                            <option value="staff">Staff Auditor (ตรวจนับ)</option>
+                            <option value="admin">Admin CAD (งานพัสดุ)</option>
+                            <option value="executive">Executive (ผู้บริหาร)</option>
+                            <option value="superadmin">Superadmin (สูงสุด)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">หน่วยงาน (Department)</label>
+                        <input type="text" id="newDepartment" value="กองบริหารงานกลาง" placeholder="เช่น กองบริหารงานกลาง" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">อีเมลติดต่อ (Email)</label>
+                    <input type="email" id="newEmail" placeholder="เช่น officer@cmu.ac.th" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+
+                <div id="userModalError" class="hidden p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-[11px]"></div>
+
+                <div class="pt-3 flex gap-2">
+                    <button type="button" onclick="closeAddUserModal()" class="flex-1 py-2.5 bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-darkslate-700 transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="btnSaveUser" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>บันทึกผู้ใช้</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT APPLICATION CORE -->
     <script>
         const SUPABASE_URL = "https://undafgcijvuhvdmyjatk.supabase.co";
@@ -1002,6 +1160,7 @@
         let cacheBorrowings = [];
         let cacheHandoff = [];
         let cacheReports = [];
+        let cacheSystemUsers = [];
         let currentStatFilter = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1086,8 +1245,8 @@
             const avatarMap = { superadmin: "👑", admin: "📦", staff: "📱", executive: "📊" };
             const roleNameMap = {
                 superadmin: "ผู้ดูแลระบบสูงสุด (Superadmin)",
-                admin: "Admin งานพัสดุ",
-                staff: "Staff ตรวจนับ",
+                admin: "Admin เจ้าหน้าที่พัสดุ",
+                staff: "Staff เจ้าหน้าที่ตรวจนับ",
                 executive: "ผู้บริหารกองกลาง"
             };
 
@@ -1100,6 +1259,51 @@
             if (sName) sName.innerText = user.username;
             if (sRole) sRole.innerText = userRoleName;
             if (sAvatar) sAvatar.innerText = userAvatar;
+
+            applyRBAC(user);
+        }
+
+        // Apply Role-Based Access Control (RBAC) to Nav and Controls
+        function applyRBAC(user) {
+            if (!user) return;
+            const role = user.role;
+
+            const navUsers = document.getElementById("nav-users");
+            const navHandoff = document.getElementById("nav-handoff");
+            const navReports = document.getElementById("nav-reports");
+            const navAudit = document.getElementById("nav-audit");
+            const navAssets = document.getElementById("nav-assets");
+            const btnSyncGas = document.getElementById("btnSyncGas");
+
+            if (role === 'superadmin') {
+                if (navUsers) navUsers.classList.remove("hidden");
+                if (navHandoff) navHandoff.classList.remove("hidden");
+                if (navReports) navReports.classList.remove("hidden");
+                if (navAudit) navAudit.classList.remove("hidden");
+                if (navAssets) navAssets.classList.remove("hidden");
+                if (btnSyncGas) btnSyncGas.classList.remove("hidden");
+            } else if (role === 'admin') {
+                if (navUsers) navUsers.classList.add("hidden");
+                if (navHandoff) navHandoff.classList.remove("hidden");
+                if (navReports) navReports.classList.remove("hidden");
+                if (navAudit) navAudit.classList.remove("hidden");
+                if (navAssets) navAssets.classList.remove("hidden");
+                if (btnSyncGas) btnSyncGas.classList.remove("hidden");
+            } else if (role === 'executive') {
+                if (navUsers) navUsers.classList.add("hidden");
+                if (navHandoff) navHandoff.classList.add("hidden");
+                if (navReports) navReports.classList.remove("hidden");
+                if (navAudit) navAudit.classList.remove("hidden");
+                if (navAssets) navAssets.classList.add("hidden");
+                if (btnSyncGas) btnSyncGas.classList.add("hidden");
+            } else if (role === 'staff') {
+                if (navUsers) navUsers.classList.add("hidden");
+                if (navHandoff) navHandoff.classList.add("hidden");
+                if (navReports) navReports.classList.add("hidden");
+                if (navAudit) navAudit.classList.add("hidden");
+                if (navAssets) navAssets.classList.remove("hidden");
+                if (btnSyncGas) btnSyncGas.classList.add("hidden");
+            }
         }
 
         // Enterprise Login Verification via Supabase RPC (PostgreSQL pgcrypto Bcrypt Engine)
@@ -1723,11 +1927,21 @@
         }
 
         // ==========================================
-        // 5. AUDIT LOGGING SYSTEM (ENTERPRISE AUDIT TRAIL)
+        // 5. AUDIT LOGGING SYSTEM (ENTERPRISE AUDIT TRAIL - 90 DAYS RETENTION)
         // ==========================================
 
         let cacheAuditLogs = [];
         let auditDebounceTimer = null;
+        const AUDIT_RETENTION_DAYS = 90;
+
+        function pruneAuditLogs90Days(logs) {
+            if (!Array.isArray(logs)) return [];
+            const cutoffMs = Date.now() - (AUDIT_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+            return logs.filter(l => {
+                const ts = new Date(l.timestamp).getTime();
+                return !isNaN(ts) && ts >= cutoffMs;
+            });
+        }
 
         function logAuditDebounced(action, targetType, targetId, details) {
             clearTimeout(auditDebounceTimer);
@@ -1750,11 +1964,13 @@
                 ip_address: "web-client"
             };
 
-            // Local cache persistence
+            // Local cache persistence with strict 90-day retention
             try {
                 let local = JSON.parse(localStorage.getItem("cad_audit_logs") || "[]");
                 local.unshift(entry);
-                if (local.length > 500) local = local.slice(0, 500);
+                // Keep only records within 90 days
+                local = pruneAuditLogs90Days(local);
+                if (local.length > 2000) local = local.slice(0, 2000);
                 localStorage.setItem("cad_audit_logs", JSON.stringify(local));
                 cacheAuditLogs = local;
                 renderAuditLogsTable(cacheAuditLogs);
@@ -1776,8 +1992,10 @@
 
         async function loadAuditLogs() {
             let cloudLogs = [];
+            const cutoffIso = new Date(Date.now() - (AUDIT_RETENTION_DAYS * 24 * 60 * 60 * 1000)).toISOString();
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/audit_logs?select=*&order=timestamp.desc&limit=200`, { headers: API_HEADERS });
+                // Fetch up to 1000 logs strictly within 90 days from Supabase
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/audit_logs?timestamp=gte.${cutoffIso}&order=timestamp.desc&limit=1000`, { headers: API_HEADERS });
                 if (res.ok) {
                     cloudLogs = await res.json();
                 }
@@ -1786,19 +2004,21 @@
             let localLogs = [];
             try {
                 localLogs = JSON.parse(localStorage.getItem("cad_audit_logs") || "[]");
+                localLogs = pruneAuditLogs90Days(localLogs);
+                localStorage.setItem("cad_audit_logs", JSON.stringify(localLogs));
             } catch(e) {}
 
             // Default seed logs if completely empty
             if (cloudLogs.length === 0 && localLogs.length === 0) {
                 localLogs = [
                     {
-                        timestamp: new Date(Date.now() - 3600000).toISOString(),
+                        timestamp: new Date().toISOString(),
                         username: "system",
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v1.2.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending และระบบ Audit Logging บน Cloud Hub",
+                        target_id: "v1.3.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.3.0 พร้อมเก็บบันทึกประวัติความปลอดภัย 90 วัน",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -1820,7 +2040,8 @@
                 const key = `${l.timestamp}_${l.username}_${l.action}_${l.target_id}`;
                 if (!map.has(key)) map.set(key, l);
             });
-            cacheAuditLogs = Array.from(map.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            // Sort and prune 90 days
+            cacheAuditLogs = pruneAuditLogs90Days(Array.from(map.values())).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             renderAuditLogsTable(cacheAuditLogs);
             const badge = document.getElementById("badge-nav-audit");
             if (badge) badge.innerText = `${cacheAuditLogs.length}`;
@@ -1855,6 +2076,7 @@
             const actionBadgeMap = {
                 LOGIN: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
                 LOGOUT: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800',
+                USER_MANAGEMENT: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800',
                 SEARCH: 'bg-slate-100 text-slate-700 dark:bg-darkslate-800 dark:text-slate-300 border-slate-300 dark:border-darkslate-700',
                 EXPORT_CAD: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800',
                 EXPORT_REPORT: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300 dark:border-blue-800',
@@ -1924,11 +2146,25 @@
         }
 
         // ==========================================
-        // 6. VIEW NAVIGATION SWITCHER
+        // 6. VIEW NAVIGATION SWITCHER (WITH RBAC ACCESS GUARDS)
         // ==========================================
 
         function switchView(view) {
-            const views = ['dashboard', 'borrowings', 'assets', 'handoff', 'reports', 'audit'];
+            const role = currentUser ? currentUser.role : 'public';
+            const roleAllowedViews = {
+                superadmin: ['dashboard', 'borrowings', 'assets', 'handoff', 'reports', 'audit', 'users'],
+                admin: ['dashboard', 'borrowings', 'assets', 'handoff', 'reports', 'audit'],
+                executive: ['dashboard', 'borrowings', 'reports', 'audit'],
+                staff: ['dashboard', 'borrowings', 'assets']
+            };
+
+            const allowed = (roleAllowedViews[role] || ['dashboard', 'borrowings']).includes(view);
+            if (!allowed) {
+                alert(`⚠️ บัญชีผู้ใช้งานบทบาท "${role}" ไม่มีสิทธิ์เข้าถึงหน้านี้`);
+                view = 'dashboard';
+            }
+
+            const views = ['dashboard', 'borrowings', 'assets', 'handoff', 'reports', 'audit', 'users'];
             views.forEach(v => {
                 const nav = document.getElementById(`nav-${v}`);
                 if (nav) {
@@ -1946,12 +2182,276 @@
             document.getElementById('view-section-reports').classList.toggle('hidden', view !== 'reports');
             const viewAudit = document.getElementById('view-section-audit');
             if (viewAudit) viewAudit.classList.toggle('hidden', view !== 'audit');
+            const viewUsers = document.getElementById('view-section-users');
+            if (viewUsers) viewUsers.classList.toggle('hidden', view !== 'users');
 
             if (view === 'reports') {
                 renderReportsTable();
             } else if (view === 'audit') {
                 loadAuditLogs();
+            } else if (view === 'users') {
+                loadSystemUsers();
             }
+        }
+
+        // ==========================================
+        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN)
+        // ==========================================
+
+        async function loadSystemUsers() {
+            let cloudUsers = [];
+            try {
+                // Fetch from Supabase system_users table
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/system_users?select=id,username,full_name,role,department,email,is_active,created_at&order=id.asc`, {
+                    headers: API_HEADERS
+                });
+                if (res.ok) {
+                    cloudUsers = await res.json();
+                }
+            } catch(e) {}
+
+            let localUsers = [];
+            try {
+                localUsers = JSON.parse(localStorage.getItem("cad_system_users") || "[]");
+            } catch(e) {}
+
+            // Pre-seeded users if neither cloud nor local exists
+            const defaultSeedUsers = [
+                { id: 1, username: 'superadmin', full_name: 'ผู้ดูแลระบบสูงสุด', role: 'superadmin', department: 'งานพัสดุและครุภัณฑ์ กองบริหารงานกลาง', email: 'superadmin@cmu.ac.th', is_active: true },
+                { id: 2, username: 'admin', full_name: 'เจ้าหน้าที่พัสดุ CAD', role: 'admin', department: 'งานพัสดุและครุภัณฑ์ กองบริหารงานกลาง', email: 'admin@cmu.ac.th', is_active: true },
+                { id: 3, username: 'staff', full_name: 'เจ้าหน้าที่ตรวจนับ', role: 'staff', department: 'งานพัสดุและครุภัณฑ์ กองบริหารงานกลาง', email: 'staff@cmu.ac.th', is_active: true },
+                { id: 4, username: 'executive', full_name: 'ผู้บริหารกองกลาง', role: 'executive', department: 'กองบริหารงานกลาง สำนักงานมหาวิทยาลัย', email: 'executive@cmu.ac.th', is_active: true }
+            ];
+
+            const userMap = new Map();
+            // Load defaults first
+            defaultSeedUsers.forEach(u => userMap.set(u.username, u));
+            // Merge local users
+            localUsers.forEach(u => userMap.set(u.username, u));
+            // Merge cloud users (authoritative)
+            cloudUsers.forEach(u => userMap.set(u.username, u));
+
+            cacheSystemUsers = Array.from(userMap.values());
+            localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
+            renderSystemUsersTable(cacheSystemUsers);
+        }
+
+        function filterUsersTable() {
+            const q = document.getElementById("userSearchInput") ? document.getElementById("userSearchInput").value.toLowerCase().trim() : "";
+            if (!q) {
+                renderSystemUsersTable(cacheSystemUsers);
+                return;
+            }
+            const filtered = cacheSystemUsers.filter(u => {
+                const str = `${u.username || ''} ${u.full_name || ''} ${u.role || ''} ${u.department || ''} ${u.email || ''}`.toLowerCase();
+                return str.includes(q);
+            });
+            renderSystemUsersTable(filtered);
+        }
+
+        function renderSystemUsersTable(users) {
+            const tbody = document.getElementById("tbodyUsers");
+            if (!tbody) return;
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400 font-sans">ไม่พบรายชื่อผู้ใช้งาน</td></tr>';
+                return;
+            }
+
+            const roleBadges = {
+                superadmin: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800',
+                admin: 'bg-cmu-100 text-cmu-800 dark:bg-cmu-950/60 dark:text-cmu-300 border-cmu-300 dark:border-cmu-800',
+                executive: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+                staff: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+            };
+
+            const roleLabels = {
+                superadmin: '👑 Superadmin (สูงสุด)',
+                admin: '📦 Admin CAD (พัสดุ)',
+                executive: '📊 Executive (ผู้บริหาร)',
+                staff: '📱 Staff (ตรวจนับ)'
+            };
+
+            tbody.innerHTML = users.map(u => {
+                const isCurrent = currentUser && currentUser.username === u.username;
+                const isSuper = u.username === 'superadmin';
+                const badgeClass = roleBadges[u.role] || 'bg-slate-100 text-slate-800 border-slate-200';
+                const label = roleLabels[u.role] || u.role;
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
+                        <td class="p-3 font-mono font-bold text-slate-900 dark:text-white">
+                            <div class="flex items-center gap-1.5">
+                                <span>${u.username}</span>
+                                ${isCurrent ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-sans font-bold">บัญชีของคุณ</span>' : ''}
+                            </div>
+                        </td>
+                        <td class="p-3 text-slate-800 dark:text-slate-200 font-sans">
+                            <div class="font-bold">${u.full_name || u.username}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${u.email || '-'}</div>
+                        </td>
+                        <td class="p-3 font-sans">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">${label}</span>
+                        </td>
+                        <td class="p-3 text-slate-600 dark:text-slate-400 text-xs font-sans">
+                            ${u.department || 'กองบริหารงานกลาง มช.'}
+                        </td>
+                        <td class="p-3 font-sans">
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold ${u.is_active !== false ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                                <span class="w-1.5 h-1.5 rounded-full ${u.is_active !== false ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                                <span>${u.is_active !== false ? 'เปิดใช้งาน' : 'ระงับชั่วคราว'}</span>
+                            </span>
+                        </td>
+                        <td class="p-3 text-center font-sans">
+                            ${isSuper || isCurrent ? `
+                                <span class="text-[10px] text-slate-400 italic">ผู้ดูแลหลัก</span>
+                            ` : `
+                                <button onclick="deleteUser('${u.username}')" class="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    <span>ลบผู้ใช้</span>
+                                </button>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function openAddUserModal() {
+            const modal = document.getElementById("modalAddUser");
+            if (modal) modal.classList.remove("hidden");
+            const err = document.getElementById("userModalError");
+            if (err) err.classList.add("hidden");
+            document.getElementById("newUsername").value = "";
+            document.getElementById("newPassword").value = "";
+            document.getElementById("newFullName").value = "";
+            document.getElementById("newEmail").value = "";
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeAddUserModal() {
+            const modal = document.getElementById("modalAddUser");
+            if (modal) modal.classList.add("hidden");
+        }
+
+        async function handleSaveUser(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const u = document.getElementById("newUsername").value.trim().toLowerCase();
+            const p = document.getElementById("newPassword").value;
+            const name = document.getElementById("newFullName").value.trim();
+            const role = document.getElementById("newRole").value;
+            const dept = document.getElementById("newDepartment").value.trim() || 'กองบริหารงานกลาง';
+            const email = document.getElementById("newEmail").value.trim();
+            const errBox = document.getElementById("userModalError");
+
+            if (!u || !p || !name) {
+                if (errBox) {
+                    errBox.innerText = "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน";
+                    errBox.classList.remove("hidden");
+                }
+                return;
+            }
+
+            if (p.length < 6) {
+                if (errBox) {
+                    errBox.innerText = "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร";
+                    errBox.classList.remove("hidden");
+                }
+                return;
+            }
+
+            if (cacheSystemUsers.some(x => x.username.toLowerCase() === u)) {
+                if (errBox) {
+                    errBox.innerText = `มีชื่อผู้ใช้งาน "${u}" อยู่ในระบบแล้ว`;
+                    errBox.classList.remove("hidden");
+                }
+                return;
+            }
+
+            const btn = document.getElementById("btnSaveUser");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-white"></i> <span>กำลังบันทึก...</span>';
+                if (window.lucide) lucide.createIcons();
+            }
+
+            // Attempt Supabase RPC
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_create_user`, {
+                    method: "POST",
+                    headers: API_HEADERS,
+                    body: JSON.stringify({
+                        p_admin_username: currentUser ? currentUser.username : "superadmin",
+                        p_new_username: u,
+                        p_password: p,
+                        p_full_name: name,
+                        p_role: role,
+                        p_department: dept,
+                        p_email: email
+                    })
+                });
+            } catch(err) {
+                console.warn("Supabase user RPC:", err);
+            }
+
+            // Update Local Cache
+            const newUser = {
+                id: Date.now(),
+                username: u,
+                full_name: name,
+                role: role,
+                department: dept,
+                email: email,
+                is_active: true,
+                created_at: new Date().toISOString()
+            };
+            cacheSystemUsers.push(newUser);
+            localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
+
+            logAudit('USER_MANAGEMENT', 'USER', u, `เพิ่มผู้ใช้งานใหม่ "${u}" ในบทบาท ${role} (${name})`);
+            closeAddUserModal();
+            renderSystemUsersTable(cacheSystemUsers);
+            alert(`✅ เพิ่มผู้ใช้งาน "${u}" ในบทบาท ${role} เรียบร้อยแล้ว`);
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> <span>บันทึกผู้ใช้</span>';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        async function deleteUser(targetUsername) {
+            if (targetUsername === 'superadmin') {
+                alert('⚠️ ไม่อนุญาตให้ลบผู้ดูแลระบบหลัก (Primary Superadmin)');
+                return;
+            }
+            if (currentUser && currentUser.username === targetUsername) {
+                alert('⚠️ ไม่สามารถลบบัญชีผู้ใช้งานที่คุณกำลังเข้าสู่ระบบอยู่ได้');
+                return;
+            }
+
+            if (!confirm(`คุณต้องการลบผู้ใช้งาน "${targetUsername}" ออกจากระบบใช่หรือไม่?\nการกระทำนี้จะถูกบันทึกใน Audit Log อย่างถาวร`)) {
+                return;
+            }
+
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_delete_user`, {
+                    method: "POST",
+                    headers: API_HEADERS,
+                    body: JSON.stringify({
+                        p_admin_username: currentUser ? currentUser.username : "superadmin",
+                        p_target_username: targetUsername
+                    })
+                });
+            } catch(e) {}
+
+            cacheSystemUsers = cacheSystemUsers.filter(x => x.username !== targetUsername);
+            localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
+
+            logAudit('USER_MANAGEMENT', 'USER', targetUsername, `ลบผู้ใช้งาน "${targetUsername}" ออกจากระบบ`);
+            renderSystemUsersTable(cacheSystemUsers);
+            alert(`🗑️ ลบผู้ใช้งาน "${targetUsername}" เรียบร้อยแล้ว`);
         }
 
         // ==========================================
