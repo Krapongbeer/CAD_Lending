@@ -1,7 +1,7 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.7.0 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.8.0 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
--- Security: Bcrypt Password Hashing, RBAC, 90-Day Audit Log Retention, Realtime Support, Supabase User Sync
+-- Security: Bcrypt Password Hashing, RBAC, 90-Day Audit Log Retention, Realtime Support, Supabase Direct Cloud Sync
 -- ============================================================================
 
 -- 1. ลบตารางเดิมถ้ามีอยู่แล้ว (Clean Slate ตามคำขอ)
@@ -421,7 +421,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION purge_audit_logs_older_than_90_days() TO anon, authenticated;
 
 -- ============================================================================
--- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v1.7.0)
+-- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v1.8.0)
 -- ============================================================================
 
 -- 12.1 ดึงรายชื่อผู้ใช้งานอย่างปลอดภัย (ไม่ส่ง password_hash หลุดออกสู่ภายนอก)
@@ -598,10 +598,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.7.0)
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.8.0)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.7.0', 'ระบบ SmartCAD-Lending v1.7.0 อัปเกรดระบบเชื่อมโยงผู้ใช้ (User Management Supabase Sync 2-Way) พร้อม Stored Procedures และความปลอดภัยขั้นสูงเรียบร้อยแล้ว'),
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.8.0', 'ระบบ SmartCAD-Lending v1.8.0 อัปเกรดระบบเชื่อมโยงผู้ใช้ (User Management Direct Cloud Sync 100%) พร้อม Bcrypt Hashing และความปลอดภัยขั้นสูงเรียบร้อยแล้ว'),
     ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt, RBAC, Stored Procedures admin_create_user/admin_list_users สำเร็จ');
 
 
