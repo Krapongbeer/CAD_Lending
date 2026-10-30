@@ -1,5 +1,5 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.3.0 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.4.0 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
 -- Security: Bcrypt Password Hashing, RBAC (Role-Based Access Control), 90-Day Audit Log Retention
 -- ============================================================================
@@ -514,10 +514,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.3.0)
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.4.0)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.3.0', 'ระบบ SmartCAD-Lending v1.3.0 พร้อมระบบ Audit Trail 90 วันและระบบจัดการผู้ใช้งาน เริ่มต้นทำงานเรียบร้อยแล้ว'),
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.4.0', 'ระบบ SmartCAD-Lending v1.4.0 พร้อมปรับปรุงโครงสร้างรายงานและลายเซ็น 3 ฝ่าย (ผู้ยืม เจ้าหน้าที่ ผู้อำนวยการ) เริ่มต้นทำงานเรียบร้อยแล้ว'),
     ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt, RBAC และ RLS สำเร็จ');
 
 
