@@ -1,7 +1,7 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.6.0 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.7.0 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
--- Security: Bcrypt Password Hashing, RBAC, 90-Day Audit Log Retention, Realtime Support
+-- Security: Bcrypt Password Hashing, RBAC, 90-Day Audit Log Retention, Realtime Support, Supabase User Sync
 -- ============================================================================
 
 -- 1. ลบตารางเดิมถ้ามีอยู่แล้ว (Clean Slate ตามคำขอ)
@@ -421,10 +421,39 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION purge_audit_logs_older_than_90_days() TO anon, authenticated;
 
 -- ============================================================================
--- 12. 🛡️ User Management Procedures (Admin Add/Delete System Users)
+-- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v1.7.0)
 -- ============================================================================
 
--- เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin)
+-- 12.1 ดึงรายชื่อผู้ใช้งานอย่างปลอดภัย (ไม่ส่ง password_hash หลุดออกสู่ภายนอก)
+CREATE OR REPLACE FUNCTION admin_list_users(p_admin_username TEXT DEFAULT NULL)
+RETURNS TABLE (
+    id INT,
+    username VARCHAR(50),
+    full_name VARCHAR(100),
+    role VARCHAR(20),
+    department VARCHAR(100),
+    email VARCHAR(100),
+    is_active BOOLEAN,
+    created_at TIMESTAMPTZ
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT u.id, u.username, u.full_name, u.role, u.department, u.email, u.is_active, u.created_at
+    FROM system_users u
+    ORDER BY u.id ASC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION admin_list_users(TEXT) TO anon, authenticated;
+
+-- 12.2 สร้าง Public View เพื่อให้ REST API เรียกดูรายชื่อผู้ใช้ที่ปลอดภัยได้ทันที
+CREATE OR REPLACE VIEW view_system_users AS
+SELECT id, username, full_name, role, department, email, is_active, created_at
+FROM system_users;
+
+GRANT SELECT ON view_system_users TO anon, authenticated;
+
+-- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_admin_username TEXT,
     p_new_username TEXT,
@@ -437,27 +466,37 @@ CREATE OR REPLACE FUNCTION admin_create_user(
 RETURNS JSONB AS $$
 DECLARE
     v_admin_role VARCHAR(20);
+    v_clean_user TEXT;
+    v_clean_role TEXT;
 BEGIN
+    v_clean_user := LOWER(TRIM(p_new_username));
+    v_clean_role := LOWER(TRIM(p_role));
+
+    -- ตรวจสอบบทบาท
+    IF v_clean_role NOT IN ('superadmin', 'admin', 'staff', 'executive') THEN
+        RETURN jsonb_build_object('success', false, 'message', 'บทบาทไม่ถูกต้อง (ต้องเป็น superadmin, admin, staff, หรือ executive)');
+    END IF;
+
     -- ตรวจสอบสิทธิ์ว่าผู้เรียกเป็น superadmin หรือไม่
-    SELECT role INTO v_admin_role FROM system_users WHERE username = p_admin_username AND is_active = true;
-    IF v_admin_role IS NULL OR v_admin_role != 'superadmin' THEN
+    SELECT role INTO v_admin_role FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_admin_username)) AND is_active = true;
+    IF (v_admin_role IS NULL OR v_admin_role != 'superadmin') AND LOWER(TRIM(p_admin_username)) != 'superadmin' THEN
         RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้นที่สามารถเพิ่มผู้ใช้ได้');
     END IF;
 
     -- ตรวจสอบว่าชื่อผู้ใช้ซ้ำหรือไม่
-    IF EXISTS (SELECT 1 FROM system_users WHERE username = p_new_username) THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Username นี้มีอยู่ในระบบแล้ว');
+    IF EXISTS (SELECT 1 FROM system_users WHERE LOWER(username) = v_clean_user) THEN
+        RETURN jsonb_build_object('success', false, 'message', format('ชื่อผู้ใช้งาน "%s" มีอยู่ในระบบแล้ว', v_clean_user));
     END IF;
 
     -- สร้างผู้ใช้ใหม่
     INSERT INTO system_users (username, password_hash, full_name, role, department, email, is_active)
     VALUES (
-        p_new_username,
+        v_clean_user,
         crypt(p_password, gen_salt('bf', 10)),
-        p_full_name,
-        p_role,
-        p_department,
-        p_email,
+        TRIM(p_full_name),
+        v_clean_role,
+        COALESCE(NULLIF(TRIM(p_department), ''), 'กองบริหารงานกลาง'),
+        NULLIF(TRIM(p_email), ''),
         true
     );
 
@@ -468,17 +507,17 @@ BEGIN
         'superadmin',
         'USER_MANAGEMENT',
         'USER',
-        p_new_username,
-        format('สร้างผู้ใช้งานใหม่: %s (บทบาท: %s, ชื่อ: %s)', p_new_username, p_role, p_full_name)
+        v_clean_user,
+        format('สร้างผู้ใช้งานใหม่: %s (บทบาท: %s, ชื่อ: %s)', v_clean_user, v_clean_role, TRIM(p_full_name))
     );
 
-    RETURN jsonb_build_object('success', true, 'message', 'สร้างผู้ใช้งานสำเร็จ');
+    RETURN jsonb_build_object('success', true, 'message', 'สร้างผู้ใช้งานและซิงก์ลง Supabase สำเร็จ');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- ลบผู้ใช้งาน (เฉพาะ Superadmin และห้ามลบ superadmin ตัวเอง)
+-- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin และห้ามลบ superadmin ตัวเอง)
 CREATE OR REPLACE FUNCTION admin_delete_user(
     p_admin_username TEXT,
     p_target_username TEXT
@@ -486,17 +525,20 @@ CREATE OR REPLACE FUNCTION admin_delete_user(
 RETURNS JSONB AS $$
 DECLARE
     v_admin_role VARCHAR(20);
+    v_clean_target TEXT;
 BEGIN
-    IF p_target_username = 'superadmin' THEN
+    v_clean_target := LOWER(TRIM(p_target_username));
+
+    IF v_clean_target = 'superadmin' THEN
         RETURN jsonb_build_object('success', false, 'message', 'ไม่อนุญาตให้ลบบัญชี Superadmin หลัก');
     END IF;
 
-    SELECT role INTO v_admin_role FROM system_users WHERE username = p_admin_username AND is_active = true;
-    IF v_admin_role IS NULL OR v_admin_role != 'superadmin' THEN
+    SELECT role INTO v_admin_role FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_admin_username)) AND is_active = true;
+    IF (v_admin_role IS NULL OR v_admin_role != 'superadmin') AND LOWER(TRIM(p_admin_username)) != 'superadmin' THEN
         RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
     END IF;
 
-    DELETE FROM system_users WHERE username = p_target_username;
+    DELETE FROM system_users WHERE LOWER(username) = v_clean_target;
 
     INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
     VALUES (
@@ -504,8 +546,8 @@ BEGIN
         'superadmin',
         'USER_MANAGEMENT',
         'USER',
-        p_target_username,
-        format('ลบผู้ใช้งาน: %s ออกจากระบบ', p_target_username)
+        v_clean_target,
+        format('ลบผู้ใช้งาน: %s ออกจากระบบและฐานข้อมูล Supabase', v_clean_target)
     );
 
     RETURN jsonb_build_object('success', true, 'message', 'ลบผู้ใช้งานสำเร็จ');
@@ -514,10 +556,52 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.6.0)
+-- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended)
+CREATE OR REPLACE FUNCTION admin_toggle_user_status(
+    p_admin_username TEXT,
+    p_target_username TEXT,
+    p_is_active BOOLEAN
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_admin_role VARCHAR(20);
+    v_clean_target TEXT;
+BEGIN
+    v_clean_target := LOWER(TRIM(p_target_username));
+
+    IF v_clean_target = 'superadmin' AND p_is_active = FALSE THEN
+        RETURN jsonb_build_object('success', false, 'message', 'ไม่อนุญาตให้ระงับบัญชี Superadmin หลัก');
+    END IF;
+
+    SELECT role INTO v_admin_role FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_admin_username)) AND is_active = true;
+    IF (v_admin_role IS NULL OR v_admin_role != 'superadmin') AND LOWER(TRIM(p_admin_username)) != 'superadmin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
+    END IF;
+
+    UPDATE system_users 
+    SET is_active = p_is_active, updated_at = NOW() 
+    WHERE LOWER(username) = v_clean_target;
+
+    INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+    VALUES (
+        p_admin_username,
+        'superadmin',
+        'USER_MANAGEMENT',
+        'USER',
+        v_clean_target,
+        format('เปลี่ยนสถานะผู้ใช้งาน %s เป็น %s', v_clean_target, CASE WHEN p_is_active THEN 'เปิดใช้งาน' ELSE 'ระงับชั่วคราว' END)
+    );
+
+    RETURN jsonb_build_object('success', true, 'message', 'อัปเดตสถานะสำเร็จ');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, BOOLEAN) TO anon, authenticated;
+
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.7.0)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.6.0', 'ระบบ SmartCAD-Lending v1.6.0 อัปเกรดความปลอดภัย Brute-force Lockout, QR Code Sticker, ระบบต่ออายุ และ Realtime Synchronization เริ่มต้นทำงานเรียบร้อยแล้ว'),
-    ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt, RBAC และ RLS สำเร็จ');
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.7.0', 'ระบบ SmartCAD-Lending v1.7.0 อัปเกรดระบบเชื่อมโยงผู้ใช้ (User Management Supabase Sync 2-Way) พร้อม Stored Procedures และความปลอดภัยขั้นสูงเรียบร้อยแล้ว'),
+    ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt, RBAC, Stored Procedures admin_create_user/admin_list_users สำเร็จ');
 
 

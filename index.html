@@ -228,7 +228,7 @@
         <div class="flex items-center gap-2 sm:gap-3">
             
             <!-- AUTHENTICATED SYSTEM TOOLS (Shown ONLY after login) -->
-            <div id="header-auth-tools" class="flex items-center gap-2 sm:gap-3">
+            <div id="header-auth-tools" class="hidden items-center gap-2 sm:gap-3">
                 <!-- Real-time Status Badge -->
                 <div class="flex items-center gap-1.5 apple-liquid-glass px-3 py-1.5 rounded-2xl text-xs font-semibold">
                     <span class="relative flex h-2 w-2">
@@ -295,7 +295,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.6.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.7.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -434,7 +434,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.6.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.7.0</span>
                 </div>
             </div>
         </aside>
@@ -964,10 +964,12 @@
             <section id="view-section-users" class="space-y-4 hidden">
                 <div class="apple-liquid-glass p-5 rounded-3xl border border-indigo-200 dark:border-indigo-900/50 bg-gradient-to-r from-indigo-500/10 via-cmu-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <span class="px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold font-mono">RBAC Security (Role-Based Access Control)</span>
-                            <span class="text-xs text-slate-400">•</span>
-                            <span class="text-xs text-slate-500 dark:text-slate-400">ระบบจัดการผู้ใช้งานและกำหนดสิทธิ์</span>
+                            <span id="user-sync-status-badge" class="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-darkslate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold font-mono flex items-center gap-1.5 border border-slate-200 dark:border-darkslate-700">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                <span>กำลังเชื่อมต่อ Supabase...</span>
+                            </span>
                         </div>
                         <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white font-display mt-1 flex items-center gap-2">
                             <i data-lucide="user-cog" class="w-5 h-5 text-indigo-600"></i>
@@ -2171,8 +2173,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v1.6.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.6.0 ติดตั้ง Realtime WebSockets, QR Sticker, ต่ออายุการยืม, Brute-force Lockout และ Idle Timeout 30 นาที",
+                        target_id: "v1.7.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.7.0 เชื่อมต่อ User Management สู่ Supabase แบบ Two-Way พร้อม Stored Procedures และความปลอดภัย Bcrypt",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -2349,27 +2351,74 @@
         }
 
         // ==========================================
-        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN)
+        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE 2-WAY SYNC)
         // ==========================================
 
         async function loadSystemUsers() {
-            let cloudUsers = [];
+            const badge = document.getElementById("user-sync-status-badge");
+            if (badge) {
+                badge.className = "px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-darkslate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold font-mono flex items-center gap-1.5 border border-slate-200 dark:border-darkslate-700";
+                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span> <span>กำลังโหลดรายชื่อผู้ใช้จาก Supabase...</span>';
+            }
+
+            let cloudUsers = null;
+
+            // 1. Try RPC: admin_list_users (Gold Standard: Security Definer, no password_hash exposed)
             try {
-                // Fetch from Supabase system_users table
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/system_users?select=id,username,full_name,role,department,email,is_active,created_at&order=id.asc`, {
-                    headers: API_HEADERS
+                const resRpc = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_list_users`, {
+                    method: "POST",
+                    headers: API_HEADERS,
+                    body: JSON.stringify({ p_admin_username: currentUser ? currentUser.username : "superadmin" })
                 });
-                if (res.ok) {
-                    cloudUsers = await res.json();
+                if (resRpc.ok) {
+                    const data = await resRpc.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        cloudUsers = data;
+                    }
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.warn("admin_list_users RPC:", e);
+            }
+
+            // 2. Fallback: view_system_users
+            if (!cloudUsers) {
+                try {
+                    const resView = await fetch(`${SUPABASE_URL}/rest/v1/view_system_users?select=id,username,full_name,role,department,email,is_active,created_at&order=id.asc`, {
+                        headers: API_HEADERS
+                    });
+                    if (resView.ok) {
+                        const data = await resView.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            cloudUsers = data;
+                        }
+                    }
+                } catch(e) {
+                    console.warn("view_system_users fallback:", e);
+                }
+            }
+
+            // 3. Fallback: system_users
+            if (!cloudUsers) {
+                try {
+                    const resTable = await fetch(`${SUPABASE_URL}/rest/v1/system_users?select=id,username,full_name,role,department,email,is_active,created_at&order=id.asc`, {
+                        headers: API_HEADERS
+                    });
+                    if (resTable.ok) {
+                        const data = await resTable.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            cloudUsers = data;
+                        }
+                    }
+                } catch(e) {
+                    console.warn("system_users fallback:", e);
+                }
+            }
 
             let localUsers = [];
             try {
                 localUsers = JSON.parse(localStorage.getItem("cad_system_users") || "[]");
             } catch(e) {}
 
-            // Pre-seeded users if neither cloud nor local exists
             const defaultSeedUsers = [
                 { id: 1, username: 'superadmin', full_name: 'ผู้ดูแลระบบสูงสุด', role: 'superadmin', department: 'งานพัสดุและครุภัณฑ์ กองบริหารงานกลาง', email: 'superadmin@cmu.ac.th', is_active: true },
                 { id: 2, username: 'admin', full_name: 'เจ้าหน้าที่พัสดุ CAD', role: 'admin', department: 'งานพัสดุและครุภัณฑ์ กองบริหารงานกลาง', email: 'admin@cmu.ac.th', is_active: true },
@@ -2377,16 +2426,25 @@
                 { id: 4, username: 'executive', full_name: 'ผู้บริหารกองกลาง', role: 'executive', department: 'กองบริหารงานกลาง สำนักงานมหาวิทยาลัย', email: 'executive@cmu.ac.th', is_active: true }
             ];
 
-            const userMap = new Map();
-            // Load defaults first
-            defaultSeedUsers.forEach(u => userMap.set(u.username, u));
-            // Merge local users
-            localUsers.forEach(u => userMap.set(u.username, u));
-            // Merge cloud users (authoritative)
-            cloudUsers.forEach(u => userMap.set(u.username, u));
+            if (cloudUsers && cloudUsers.length > 0) {
+                cacheSystemUsers = cloudUsers;
+                localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold font-mono flex items-center gap-1.5 border border-emerald-300 dark:border-emerald-800 shadow-2xs";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> <span>🟢 ซิงก์กับ Supabase Cloud (${cloudUsers.length} บัญชี)</span>`;
+                }
+            } else {
+                const userMap = new Map();
+                defaultSeedUsers.forEach(u => userMap.set(u.username, u));
+                localUsers.forEach(u => userMap.set(u.username, u));
+                cacheSystemUsers = Array.from(userMap.values());
+                if (badge) {
+                    badge.className = "px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[10px] font-bold font-mono flex items-center gap-1.5 border border-amber-300 dark:border-amber-800 shadow-2xs";
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> <span>🟡 Local Cache (${cacheSystemUsers.length} บัญชี - รอรัน SQL บน Supabase)</span>`;
+                    badge.title = "กรุณานำ SQL จาก supabase_schema.sql ไปรันใน Supabase SQL Editor เพื่อเปิดใช้งาน Supabase Cloud Sync เต็มรูปแบบ";
+                }
+            }
 
-            cacheSystemUsers = Array.from(userMap.values());
-            localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
             renderSystemUsersTable(cacheSystemUsers);
         }
 
@@ -2460,10 +2518,15 @@
                             ${isSuper || isCurrent ? `
                                 <span class="text-[10px] text-slate-400 italic">ผู้ดูแลหลัก</span>
                             ` : `
-                                <button onclick="deleteUser('${u.username}')" class="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    <span>ลบผู้ใช้</span>
-                                </button>
+                                <div class="inline-flex items-center gap-1.5">
+                                    <button onclick="toggleUserStatus('${u.username}', ${u.is_active === false})" class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-darkslate-800 dark:hover:bg-darkslate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer" title="${u.is_active !== false ? 'ระงับการใช้งานชั่วคราว' : 'เปิดใช้งานบัญชี'}">
+                                        <i data-lucide="${u.is_active !== false ? 'user-x' : 'user-check'}" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="deleteUser('${u.username}')" class="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer" title="ลบผู้ใช้งานถาวร">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        <span>ลบ</span>
+                                    </button>
+                                </div>
                             `}
                         </td>
                     </tr>
@@ -2515,7 +2578,7 @@
                 return;
             }
 
-            if (cacheSystemUsers.some(x => x.username.toLowerCase() === u)) {
+            if (cacheSystemUsers.some(x => (x.username || '').toLowerCase() === u)) {
                 if (errBox) {
                     errBox.innerText = `มีชื่อผู้ใช้งาน "${u}" อยู่ในระบบแล้ว`;
                     errBox.classList.remove("hidden");
@@ -2526,13 +2589,16 @@
             const btn = document.getElementById("btnSaveUser");
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-white"></i> <span>กำลังบันทึก...</span>';
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-white"></i> <span>กำลังบันทึกลง Supabase...</span>';
                 if (window.lucide) lucide.createIcons();
             }
 
-            // Attempt Supabase RPC
+            let supabaseSuccess = false;
+            let errorMessage = "";
+
+            // Call Supabase RPC admin_create_user
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_create_user`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_create_user`, {
                     method: "POST",
                     headers: API_HEADERS,
                     body: JSON.stringify({
@@ -2542,31 +2608,56 @@
                         p_full_name: name,
                         p_role: role,
                         p_department: dept,
-                        p_email: email
+                        p_email: email || null
                     })
                 });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        supabaseSuccess = true;
+                    } else {
+                        errorMessage = (data && data.message) ? data.message : "Supabase ปฏิเสธคำขอสร้างผู้ใช้";
+                    }
+                } else {
+                    const errText = await res.text();
+                    console.error("Supabase RPC admin_create_user failed:", res.status, errText);
+                    if (res.status === 404 || errText.includes("PGRST202") || errText.includes("Could not find the function")) {
+                        errorMessage = "ยังไม่ได้ติดตั้ง Stored Procedure `admin_create_user` บน Supabase SQL Editor\nกรุณานำคำสั่ง SQL ใน `supabase_schema.sql` ไปรันใน Supabase เพื่อเปิดใช้ Cloud Sync";
+                    } else {
+                        try {
+                            const parsed = JSON.parse(errText);
+                            errorMessage = parsed.message || parsed.hint || errText;
+                        } catch(_) {
+                            errorMessage = `ข้อผิดพลาดจาก Supabase (${res.status}): ${errText.slice(0, 160)}`;
+                        }
+                    }
+                }
             } catch(err) {
-                console.warn("Supabase user RPC:", err);
+                console.error("Network/Supabase error:", err);
+                errorMessage = `ไม่สามารถเชื่อมต่อ Supabase ได้: ${err.message || err}`;
             }
 
-            // Update Local Cache
-            const newUser = {
-                id: Date.now(),
-                username: u,
-                full_name: name,
-                role: role,
-                department: dept,
-                email: email,
-                is_active: true,
-                created_at: new Date().toISOString()
-            };
-            cacheSystemUsers.push(newUser);
-            localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
+            if (!supabaseSuccess) {
+                if (errBox) {
+                    errBox.innerHTML = `⚠️ <b>บันทึกลง Supabase ไม่สำเร็จ:</b><br>${errorMessage.replace(/\n/g, '<br>')}`;
+                    errBox.classList.remove("hidden");
+                } else {
+                    alert(`⚠️ บันทึกลง Supabase ไม่สำเร็จ:\n${errorMessage}`);
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> <span>บันทึกผู้ใช้</span>';
+                    if (window.lucide) lucide.createIcons();
+                }
+                return; // DO NOT fake success when Supabase failed!
+            }
 
-            logAudit('USER_MANAGEMENT', 'USER', u, `เพิ่มผู้ใช้งานใหม่ "${u}" ในบทบาท ${role} (${name})`);
+            // Sync successfully to Supabase!
+            logAudit('USER_MANAGEMENT', 'USER', u, `เพิ่มผู้ใช้งานใหม่ "${u}" ในบทบาท ${role} (${name}) ซิงก์สู่ Supabase สำเร็จ`);
             closeAddUserModal();
-            renderSystemUsersTable(cacheSystemUsers);
-            alert(`✅ เพิ่มผู้ใช้งาน "${u}" ในบทบาท ${role} เรียบร้อยแล้ว`);
+            await loadSystemUsers();
+            alert(`✅ บันทึกผู้ใช้งาน "${u}" ลงใน Supabase Database สำเร็จเรียบร้อยแล้ว\n(บทบาท: ${role}, ชื่อ: ${name})`);
 
             if (btn) {
                 btn.disabled = false;
@@ -2585,12 +2676,15 @@
                 return;
             }
 
-            if (!confirm(`คุณต้องการลบผู้ใช้งาน "${targetUsername}" ออกจากระบบใช่หรือไม่?\nการกระทำนี้จะถูกบันทึกใน Audit Log อย่างถาวร`)) {
+            if (!confirm(`คุณต้องการลบผู้ใช้งาน "${targetUsername}" ออกจาก Supabase Database ใช่หรือไม่?\nการกระทำนี้จะลบบัญชีผู้ใช้ออกจากฐานข้อมูลคลาวด์และบันทึกใน Audit Log อย่างถาวร`)) {
                 return;
             }
 
+            let supabaseSuccess = false;
+            let errorMessage = "";
+
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_delete_user`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_delete_user`, {
                     method: "POST",
                     headers: API_HEADERS,
                     body: JSON.stringify({
@@ -2598,14 +2692,71 @@
                         p_target_username: targetUsername
                     })
                 });
-            } catch(e) {}
 
-            cacheSystemUsers = cacheSystemUsers.filter(x => x.username !== targetUsername);
-            localStorage.setItem("cad_system_users", JSON.stringify(cacheSystemUsers));
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        supabaseSuccess = true;
+                    } else {
+                        errorMessage = (data && data.message) ? data.message : "Supabase ปฏิเสธคำขอลบผู้ใช้";
+                    }
+                } else {
+                    const errText = await res.text();
+                    errorMessage = `Supabase Error (${res.status}): ${errText.slice(0, 150)}`;
+                }
+            } catch(e) {
+                errorMessage = `ไม่สามารถเชื่อมต่อ Supabase: ${e.message || e}`;
+            }
 
-            logAudit('USER_MANAGEMENT', 'USER', targetUsername, `ลบผู้ใช้งาน "${targetUsername}" ออกจากระบบ`);
-            renderSystemUsersTable(cacheSystemUsers);
-            alert(`🗑️ ลบผู้ใช้งาน "${targetUsername}" เรียบร้อยแล้ว`);
+            if (!supabaseSuccess) {
+                alert(`⚠️ ไม่สามารถลบผู้ใช้งานจาก Supabase ได้:\n${errorMessage}`);
+                return;
+            }
+
+            logAudit('USER_MANAGEMENT', 'USER', targetUsername, `ลบผู้ใช้งาน "${targetUsername}" ออกจาก Supabase อย่างถาวร`);
+            await loadSystemUsers();
+            alert(`🗑️ ลบผู้ใช้งาน "${targetUsername}" ออกจาก Supabase สำเร็จเรียบร้อยแล้ว`);
+        }
+
+        async function toggleUserStatus(targetUsername, newStatus) {
+            if (targetUsername === 'superadmin' && !newStatus) {
+                alert('⚠️ ไม่อนุญาตให้ระงับบัญชี Superadmin หลัก');
+                return;
+            }
+
+            const actionText = newStatus ? "เปิดใช้งาน" : "ระงับชั่วคราว";
+            if (!confirm(`คุณต้องการเปลี่ยนสถานะบัญชี "${targetUsername}" เป็น "${actionText}" ใช่หรือไม่?`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_toggle_user_status`, {
+                    method: "POST",
+                    headers: API_HEADERS,
+                    body: JSON.stringify({
+                        p_admin_username: currentUser ? currentUser.username : "superadmin",
+                        p_target_username: targetUsername,
+                        p_is_active: newStatus
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        logAudit('USER_MANAGEMENT', 'USER', targetUsername, `เปลี่ยนสถานะ "${targetUsername}" เป็น ${actionText} บน Supabase`);
+                        await loadSystemUsers();
+                        alert(`✅ เปลี่ยนสถานะบัญชี "${targetUsername}" เป็น "${actionText}" บน Supabase สำเร็จ`);
+                        return;
+                    } else {
+                        alert(`⚠️ Supabase แจ้งเตือน: ${(data && data.message) || 'ไม่สามารถอัปเดตได้'}`);
+                    }
+                } else {
+                    const errText = await res.text();
+                    alert(`⚠️ ข้อผิดพลาดจาก Supabase (${res.status}): ${errText.slice(0, 150)}`);
+                }
+            } catch(e) {
+                alert(`⚠️ ไม่สามารถเชื่อมต่อ Supabase ได้: ${e.message || e}`);
+            }
         }
 
         // ==========================================

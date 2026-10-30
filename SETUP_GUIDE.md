@@ -25,8 +25,10 @@
      - สร้างตาราง `audit_logs` พร้อม RLS และ Index ความเร็วสูงสำหรับจัดเก็บบันทึกประวัติ (Audit Trail)
      - นโยบายจัดเก็บและตรวจสอบประวัติย้อนหลัง 90 วัน พร้อมฟังก์ชัน Auto-Purge (`purge_audit_logs_older_than_90_days`)
      - บันทึกทุกกิจกรรม: เข้าสู่ระบบ, ออกจากระบบ, จัดการผู้ใช้ (เพิ่ม/ลบ), ค้นหาข้อมูล, ส่งออก CAD Excel, พิมพ์รายงานราชการ, ซิงก์ข้อมูล
-   - **👥 ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (User Management & RBAC v1.6.0):**
-     - Stored Procedure `admin_create_user` และ `admin_delete_user` เพื่อให้ Superadmin สามารถเพิ่ม/ลบบัญชีผู้ใช้งานได้อย่างปลอดภัย
+   - **👥 ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (User Management & Supabase 2-Way Sync v1.7.0):**
+     - Stored Procedures ระดับความปลอดภัยสูง: `admin_create_user`, `admin_delete_user`, `admin_list_users`, `admin_toggle_user_status`
+     - Public Safe View `view_system_users` ป้องกันการรั่วไหลของรหัสผ่านหรือ hash 100%
+     - เมื่อ Superadmin กดเพิ่ม/ลบผู้ใช้ใน UI ระบบจะส่งคำสั่งไปยัง Supabase Cloud Database ทันที พร้อมแปลงรหัสผ่านเป็น Bcrypt Hash บน Database Engine อย่างปลอดภัย
      - กำหนดสิทธิ์ 4 ระดับ: `superadmin`, `admin`, `executive`, `staff`
      - แบบฟอร์มรายงานสรุปการยืม-คืนตามมาตรฐานราชการ พร้อมช่องลงนาม 3 ฝ่าย (ผู้ยืม, เจ้าหน้าที่, ผู้อำนวยการ)
      - ระบบพิมพ์ป้าย QR Code Sticker ประจำตัวอุปกรณ์ และปุ่มขอขยายเวลาการยืม (ต่ออายุ)
