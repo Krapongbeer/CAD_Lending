@@ -98,6 +98,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS for Excel Generation -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- QRCode.js Library for Asset Sticker Labels -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         * { font-family: "Sarabun", "Plus Jakarta Sans", sans-serif; }
@@ -293,7 +295,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.5.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.6.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -432,7 +434,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.5.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.6.0</span>
                 </div>
             </div>
         </aside>
@@ -569,6 +571,7 @@
                                     <th class="p-3.5">กำหนดส่งคืน</th>
                                     <th class="p-3.5">สถานะ</th>
                                     <th class="p-3.5 text-center">หลักฐานยืนยัน</th>
+                                    <th class="p-3.5 text-center">การจัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="tbodyBorrowings" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
@@ -624,6 +627,7 @@
                                     <th class="p-3.5">สถานะทะเบียน</th>
                                     <th class="p-3.5">สถานะการยืม</th>
                                     <th class="p-3.5">เลขครุภัณฑ์</th>
+                                    <th class="p-3.5 text-center">ป้าย QR</th>
                                 </tr>
                             </thead>
                             <tbody id="tbodyAssets" class="divide-y divide-slate-100 dark:divide-darkslate-800/80 font-medium">
@@ -733,7 +737,14 @@
                         </div>
                     </div>
 
-                    <!-- Filter Inputs -->
+                    <!-- Quick Filters for Executive (1-Click) -->
+                    <div class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+                        <span class="text-[11px] font-bold text-slate-400 mr-1">ตัวกรองด่วน:</span>
+                        <button onclick="setReportQuickFilter('ALL')" id="qf-all" class="px-2.5 py-1 rounded-xl font-bold text-[11px] bg-slate-200 dark:bg-darkslate-700 text-slate-800 dark:text-slate-200 transition">ทั้งหมด</button>
+                        <button onclick="setReportQuickFilter('กำลังยืม')" id="qf-active" class="px-2.5 py-1 rounded-xl font-bold text-[11px] bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition">เฉพาะกำลังยืม</button>
+                        <button onclick="setReportQuickFilter('เกินกำหนด')" id="qf-overdue" class="px-2.5 py-1 rounded-xl font-bold text-[11px] bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition">เฉพาะเกินกำหนด</button>
+                        <button onclick="setReportQuickFilter('คืนแล้ว')" id="qf-returned" class="px-2.5 py-1 rounded-xl font-bold text-[11px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition">เฉพาะส่งคืนแล้ว</button>
+                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                         <div class="space-y-1">
                             <label class="font-bold text-slate-600 dark:text-slate-400">สถานะรายการ:</label>
@@ -1130,6 +1141,92 @@
         </div>
     </div>
 
+    <!-- MODAL: ASSET QR CODE STICKER (PRINTABLE) -->
+    <div id="modalQrCode" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="apple-liquid-glass rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-white/20 dark:border-darkslate-700 bg-white dark:bg-darkslate-900 text-center">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                    <i data-lucide="qr-code" class="w-5 h-5 text-cmu-600"></i>
+                    <span>ป้าย QR Code ประจำอุปกรณ์</span>
+                </h3>
+                <button onclick="closeQrModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-xl transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Sticker Printable Card -->
+            <div id="qrPrintArea" class="p-4 bg-white border-2 border-slate-900 rounded-2xl text-slate-900 space-y-3">
+                <div class="border-b border-slate-300 pb-1.5">
+                    <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">มหาวิทยาลัยเชียงใหม่ • กองบริหารงานกลาง</div>
+                    <div id="qrAssetCodeHeader" class="text-xs font-black text-cmu-900">Smart Asset Label</div>
+                </div>
+
+                <div class="flex justify-center p-2 bg-slate-50 rounded-xl" id="qrcodeCanvas"></div>
+
+                <div class="text-left space-y-0.5 text-[10px]">
+                    <div class="font-bold text-slate-950 text-xs truncate" id="qrAssetName">-</div>
+                    <div class="font-mono text-slate-600"><b>SN:</b> <span id="qrAssetSn">-</span></div>
+                    <div class="font-mono text-slate-600"><b>ID:</b> <span id="qrAssetId">-</span></div>
+                    <div class="font-mono text-cmu-800 font-bold" id="qrAssetCode"><b>เลขครุภัณฑ์:</b> รอเลขครุภัณฑ์</div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeQrModal()" class="flex-1 py-2 bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs hover:bg-slate-200 transition">
+                    ปิด
+                </button>
+                <button onclick="printQrSticker()" class="flex-1 py-2 apple-btn-cmu text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>พิมพ์ป้าย QR</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: BORROW RENEWAL / EXTENSION -->
+    <div id="modalRenew" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="apple-liquid-glass rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-white/20 dark:border-darkslate-700 bg-white dark:bg-darkslate-900">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                    <i data-lucide="calendar-plus" class="w-5 h-5 text-amber-500"></i>
+                    <span>ขอขยายเวลาการยืม (ต่ออายุ)</span>
+                </h3>
+                <button onclick="closeRenewModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-xl transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-slate-50 dark:bg-darkslate-800 text-xs space-y-1">
+                <div class="font-bold text-slate-900 dark:text-white" id="renewItemName">-</div>
+                <div class="text-[11px] text-slate-500">ผู้ยืม: <span id="renewBorrower" class="font-bold text-slate-700 dark:text-slate-300">-</span></div>
+                <div class="text-[11px] text-slate-500">กำหนดคืนเดิม: <span id="renewOldDue" class="font-mono font-bold text-rose-600">-</span></div>
+            </div>
+
+            <form onsubmit="handleRenewSubmit(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="renewTxId">
+                <input type="hidden" id="renewAssetId">
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">กำหนดส่งคืนใหม่ (New Due Date) *</label>
+                    <input type="date" id="renewNewDueDate" required class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-amber-500 font-mono text-xs">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">เหตุผลความจำเป็นในการขอต่ออายุ *</label>
+                    <textarea id="renewReason" required rows="2" placeholder="เช่น การประชุมขยายเวลา, ยังตรวจนับไม่แล้วเสร็จ..." class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-xs"></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeRenewModal()" class="flex-1 py-2.5 bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold hover:bg-slate-200 transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="btnSubmitRenew" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-bold shadow-md transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>ยืนยันต่ออายุ</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT APPLICATION CORE -->
     <script>
         const SUPABASE_URL = "https://undafgcijvuhvdmyjatk.supabase.co";
@@ -1158,11 +1255,13 @@
             const authed = checkAuth();
             if (authed) {
                 loadAllData();
+                setupRealtimeSubscriptions();
+                resetIdleTimer();
             }
-            // Auto refresh every 5 seconds for live updates
+            // Smart adaptive sync: Poll every 30 seconds as safe fallback (Realtime is primary)
             setInterval(() => {
-                if (currentUser) loadAllData();
-            }, 5000);
+                if (currentUser && document.visibilityState === 'visible') loadAllData();
+            }, 30000);
         });
 
         // Authentication Handlers
@@ -1295,6 +1394,10 @@
             }
         }
 
+        // Login Rate Limiter (Brute-Force Protection)
+        let loginAttemptCount = 0;
+        let loginLockoutUntil = 0;
+
         // Enterprise Login Verification via Supabase RPC (PostgreSQL pgcrypto Bcrypt Engine)
         async function handleLogin(e) {
             if (e && e.preventDefault) e.preventDefault();
@@ -1303,6 +1406,17 @@
             const errBox = document.getElementById("login-error-box");
             const errMsg = document.getElementById("login-error-msg");
             const submitBtn = document.getElementById("btn-login-submit");
+
+            // Check Lockout
+            const now = Date.now();
+            if (now < loginLockoutUntil) {
+                const remSec = Math.ceil((loginLockoutUntil - now) / 1000);
+                if (errBox) {
+                    if (errMsg) errMsg.innerText = `⚠️ บัญชีถูกระงับชั่วคราวเนื่องจากรหัสผ่านผิดเกินกำหนด กรุณารออีก ${remSec} วินาที`;
+                    errBox.classList.remove("hidden");
+                }
+                return;
+            }
 
             if (!u || !p) {
                 if (errBox) {
@@ -1330,6 +1444,7 @@
                 if (res.ok) {
                     const result = await res.json();
                     if (result && result.success) {
+                        loginAttemptCount = 0; // Reset counter on success
                         const user = result.user;
                         const avatarMap = { superadmin: "👑", admin: "📦", staff: "📱", executive: "📊" };
                         user.avatar = avatarMap[user.role] || "👤";
@@ -1338,12 +1453,23 @@
                         localStorage.setItem("cad_lending_user", JSON.stringify(user));
                         checkAuth();
                         loadAllData();
+                        setupRealtimeSubscriptions();
+                        resetIdleTimer();
                         logAudit('LOGIN', 'AUTH', user.username, `เข้าสู่ระบบสำเร็จในบทบาท ${user.role} (${user.full_name})`);
                         return;
                     } else {
-                        if (errBox) {
-                            if (errMsg) errMsg.innerText = result.message || "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง";
-                            errBox.classList.remove("hidden");
+                        loginAttemptCount++;
+                        if (loginAttemptCount >= 5) {
+                            loginLockoutUntil = Date.now() + (5 * 60 * 1000); // 5 minutes lockout
+                            if (errBox) {
+                                if (errMsg) errMsg.innerText = "⚠️ คุณกรอกรหัสผ่านผิดเกิน 5 ครั้ง ระบบได้ระงับการเข้าสู่ระบบเป็นเวลา 5 นาที เพื่อความปลอดภัย";
+                                errBox.classList.remove("hidden");
+                            }
+                        } else {
+                            if (errBox) {
+                                if (errMsg) errMsg.innerText = `${result.message || "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง"} (ผิดครั้งที่ ${loginAttemptCount}/5)`;
+                                errBox.classList.remove("hidden");
+                            }
                         }
                     }
                 } else {
@@ -1575,6 +1701,12 @@
                                 ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature}', 'ลายเซ็นอิเล็กทรอนิกส์: ${item.borrower_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-4 h-4"></i></button>` : ''}
                             </div>
                         </td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="openRenewModal('${item.tx_id}', '${item.asset_id}', '${item.asset_name}', '${item.borrower_name}', '${item.due_date}')" class="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-xs font-bold inline-flex items-center gap-1 transition shadow-2xs cursor-pointer" title="ขอขยายเวลายืม (ต่ออายุ)">
+                                <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-500"></i>
+                                <span>ต่ออายุ</span>
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1607,6 +1739,11 @@
                         <td class="p-3.5">${regBadge}</td>
                         <td class="p-3.5">${borrowBadge}</td>
                         <td class="p-3.5 font-mono font-bold text-purple-700 dark:text-purple-400">${a.asset_code || '<span class="text-slate-300 dark:text-slate-600">-</span>'}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="openQrModal('${a.asset_id}', '${a.serial_number}', '${a.asset_name.replace(/'/g, "\\'")}', '${a.asset_code || 'รอเลขครุภัณฑ์'}')" class="p-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-900/40 text-cmu-700 dark:text-cmu-300 hover:bg-cmu-100 transition shadow-2xs" title="พิมพ์ป้าย QR Code">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1675,6 +1812,32 @@
 
         function renderReportsTable() {
             loadReportTransactions();
+        }
+
+        // 1-Click Quick Filter for Executive
+        function setReportQuickFilter(status) {
+            const select = document.getElementById('reportFilterStatus');
+            if (select) select.value = status;
+
+            const qfButtons = {
+                'ALL': 'qf-all',
+                'กำลังยืม': 'qf-active',
+                'เกินกำหนด': 'qf-overdue',
+                'คืนแล้ว': 'qf-returned'
+            };
+
+            Object.entries(qfButtons).forEach(([key, btnId]) => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    if (key === status) {
+                        btn.className = "px-2.5 py-1 rounded-xl font-bold text-[11px] bg-cmu-700 text-white shadow-sm transition";
+                    } else {
+                        btn.className = "px-2.5 py-1 rounded-xl font-bold text-[11px] bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition border border-slate-200 dark:border-darkslate-700";
+                    }
+                }
+            });
+
+            filterReportsTable();
         }
 
         function filterReportsTable() {
@@ -2008,8 +2171,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v1.5.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.5.0 แก้ไขความผิดเพี้ยนของ Layout และปรับปรุง UX/UI เต็มรูปแบบ",
+                        target_id: "v1.6.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.6.0 ติดตั้ง Realtime WebSockets, QR Sticker, ต่ออายุการยืม, Brute-force Lockout และ Idle Timeout 30 นาที",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -2586,6 +2749,153 @@
                 console.log("Realtime subscription fallback to polling:", err);
             }
         }
+
+        // ==========================================
+        // 9. QR CODE STICKER GENERATOR & BORROW RENEWAL
+        // ==========================================
+
+        let qrCodeInstance = null;
+
+        function openQrModal(assetId, sn, name, code) {
+            document.getElementById('qrAssetId').innerText = assetId;
+            document.getElementById('qrAssetSn').innerText = sn;
+            document.getElementById('qrAssetName').innerText = name;
+            document.getElementById('qrAssetCode').innerText = code && code !== 'null' ? code : 'รอเลขครุภัณฑ์';
+            document.getElementById('qrAssetCodeHeader').innerText = code && code !== 'null' ? `เลขครุภัณฑ์: ${code}` : `SN: ${sn}`;
+
+            const container = document.getElementById('qrcodeCanvas');
+            container.innerHTML = "";
+            
+            // Format QR data payload for Quick Scanning in AppSheet / Inventory
+            const qrPayload = JSON.stringify({
+                system: "SmartCAD-Lending",
+                id: assetId,
+                sn: sn,
+                code: code || ""
+            });
+
+            if (window.QRCode) {
+                qrCodeInstance = new QRCode(container, {
+                    text: qrPayload,
+                    width: 130,
+                    height: 130,
+                    colorDark : "#0f172a",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.M
+                });
+            } else {
+                container.innerHTML = `<div class="p-4 text-xs text-slate-500 font-mono">${sn}</div>`;
+            }
+
+            document.getElementById('modalQrCode').classList.remove('hidden');
+            logAudit('PRINT_QR', 'ASSET', assetId, `สร้างป้าย QR Code สำหรับอุปกรณ์ ${name} (SN: ${sn})`);
+        }
+
+        function closeQrModal() {
+            document.getElementById('modalQrCode').classList.add('hidden');
+        }
+
+        function printQrSticker() {
+            const printContent = document.getElementById('qrPrintArea').innerHTML;
+            const win = window.open('', '', 'width=450,height=500');
+            const docHtml = [
+                '<!DOCTYPE html>',
+                '<html><head><title>พิมพ์ป้าย QR Code - SmartCAD</title>',
+                '<style>body{font-family:sans-serif;padding:12px;margin:0;text-align:center;}',
+                '.card{border:2px solid #000;padding:12px;border-radius:8px;width:260px;margin:0 auto;}',
+                '@media print{body{padding:0;}}</style></head>',
+                '<body><div class="card">' + printContent + '</div>',
+                '<script>window.onload=function(){window.print();window.close();};<' + '/script>',
+                '<' + '/body><' + '/html>'
+            ].join('');
+            win.document.write(docHtml);
+            win.document.close();
+        }
+
+        // Borrow Renewal / Extension Handlers
+        function openRenewModal(txId, assetId, assetName, borrowerName, oldDueDate) {
+            document.getElementById('renewTxId').value = txId;
+            document.getElementById('renewAssetId').value = assetId;
+            document.getElementById('renewItemName').innerText = assetName;
+            document.getElementById('renewBorrower').innerText = borrowerName;
+            document.getElementById('renewOldDue').innerText = new Date(oldDueDate).toLocaleDateString('th-TH');
+            
+            // Suggest default 7 days extension
+            const nextDue = new Date(oldDueDate);
+            nextDue.setDate(nextDue.getDate() + 7);
+            document.getElementById('renewNewDueDate').value = nextDue.toISOString().split('T')[0];
+            document.getElementById('renewReason').value = "";
+            document.getElementById('modalRenew').classList.remove('hidden');
+        }
+
+        function closeRenewModal() {
+            document.getElementById('modalRenew').classList.add('hidden');
+        }
+
+        async function handleRenewSubmit(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const txId = document.getElementById('renewTxId').value;
+            const newDue = document.getElementById('renewNewDueDate').value;
+            const reason = document.getElementById('renewReason').value.trim();
+            const btn = document.getElementById('btnSubmitRenew');
+
+            if (!newDue || !reason) {
+                alert("กรุณาระบุกำหนดส่งคืนใหม่และเหตุผลความจำเป็น");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "กำลังบันทึก...";
+
+            try {
+                // Update Supabase
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/borrow_transactions?tx_id=eq.${txId}`, {
+                    method: "PATCH",
+                    headers: API_HEADERS,
+                    body: JSON.stringify({
+                        due_date: newDue,
+                        remark: `[ขอต่ออายุถึง ${newDue}: ${reason}]`
+                    })
+                });
+
+                if (res.ok) {
+                    logAudit('RENEW_BORROW', 'TRANSACTION', txId, `ขอต่ออายุการยืมถึง ${newDue} (เหตุผล: ${reason})`);
+                    alert(`✅ ต่ออายุการยืมเรียบร้อยแล้ว กำหนดส่งคืนใหม่คือ ${new Date(newDue).toLocaleDateString('th-TH')}`);
+                    closeRenewModal();
+                    loadAllData();
+                } else {
+                    alert("⚠️ ไม่สามารถอัปเดตวันกำหนดส่งคืนได้");
+                }
+            } catch(err) {
+                console.error(err);
+                alert("⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> <span>ยืนยันต่ออายุ</span>';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // ==========================================
+        // 10. SESSION SECURITY & IDLE TIMEOUT (30 MINS)
+        // ==========================================
+
+        let idleTimer = null;
+        const IDLE_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            if (currentUser) {
+                idleTimer = setTimeout(() => {
+                    alert("⚠️ เซสชันหมดอายุเนื่องจากไม่มีการใช้งานนานเกิน 30 นาที เพื่อความปลอดภัยกรุณาเข้าสู่ระบบใหม่");
+                    logout();
+                }, IDLE_LIMIT_MS);
+            }
+        }
+
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, resetIdleTimer, { passive: true });
+        });
 
         // Theme Switcher Functions
         function setTheme(theme) {
