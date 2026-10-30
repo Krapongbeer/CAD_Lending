@@ -157,8 +157,8 @@
         /* Printable Formal Government Report Styles */
         @media print {
             @page { size: A4 landscape; margin: 8mm; }
-            body { background: white !important; color: #0f172a !important; overflow: visible !important; font-size: 8.5pt !important; }
-            header, aside, #kpi-stats-section, #view-section-borrowings, #view-section-assets, #view-section-handoff, #view-section-audit, #view-section-users, #view-login, .no-print, #modalEvidence, #modalAddUser { display: none !important; }
+            body { background: white !important; color: #0f172a !important; overflow: visible !important; font-size: 8pt !important; }
+            header, aside, #kpi-stats-section, #view-section-borrowings, #view-section-assets, #view-section-handoff, #view-section-audit, #view-section-users, #view-login, .no-print, #modalEvidence, #modalAddUser, #modalRenew, #modalQrCode { display: none !important; }
             #app-main-layout { display: block !important; overflow: visible !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
             main { overflow: visible !important; padding: 0 !important; margin: 0 !important; }
             #view-section-reports { display: block !important; }
@@ -168,8 +168,9 @@
             #printable-legal-notice { display: block !important; }
             #printable-report-signature { display: grid !important; page-break-inside: avoid !important; }
             .apple-liquid-glass { box-shadow: none !important; border: none !important; background: transparent !important; backdrop-filter: none !important; }
-            table { width: 100% !important; border-collapse: collapse !important; font-size: 8pt !important; line-height: 1.25 !important; }
-            th, td { border: 1px solid #1e293b !important; padding: 5px 6px !important; color: black !important; }
+            .overflow-x-auto { overflow: visible !important; }
+            table { width: 100% !important; border-collapse: collapse !important; font-size: 7.6pt !important; line-height: 1.25 !important; table-layout: fixed !important; }
+            th, td { border: 1px solid #1e293b !important; padding: 3px 4px !important; color: black !important; word-break: break-word !important; }
             th { background-color: #f1f5f9 !important; font-weight: bold !important; text-align: center !important; }
             .badge-print-returned { font-weight: bold !important; color: #047857 !important; }
             .badge-print-active { font-weight: bold !important; color: #b45309 !important; }
@@ -297,7 +298,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.8.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.9.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -443,7 +444,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.8.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.9.0</span>
                 </div>
             </div>
         </aside>
@@ -739,9 +740,17 @@
 
                         <!-- Action Buttons -->
                         <div id="report-action-buttons" class="flex flex-wrap items-center gap-2">
-                            <button onclick="printBorrowReport()" class="apple-btn-cmu px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
+                            <button onclick="printBorrowReport()" class="apple-btn-cmu px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer" title="พิมพ์รายงานฟอร์ม พด.ยค-๐๑ หรือบันทึก PDF ทันที">
                                 <i data-lucide="printer" class="w-4 h-4"></i>
                                 <span>พิมพ์รายงาน (A4/PDF)</span>
+                            </button>
+                            <button onclick="openFormalReportTab()" class="apple-liquid-glass px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-cmu-600 flex items-center gap-1.5 shadow-xs cursor-pointer" title="เปิดหน้าเอกสารมาตรฐานในแท็บใหม่เพื่อดูตัวอย่างก่อนพิมพ์">
+                                <i data-lucide="external-link" class="w-4 h-4 text-cmu-500"></i>
+                                <span>เปิดเอกสารเต็มหน้า (แท็บใหม่)</span>
+                            </button>
+                            <button onclick="exportBorrowReportExcel()" class="apple-liquid-glass px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-emerald-600 flex items-center gap-1.5 shadow-xs cursor-pointer" title="ส่งออกข้อมูลตามตัวกรองเป็นไฟล์ Excel">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i>
+                                <span>ส่งออก Excel</span>
                             </button>
                         </div>
                     </div>
@@ -1903,14 +1912,14 @@
             filterReportsTable();
         }
 
-        function filterReportsTable() {
+        function getFilteredReportData() {
             const status = document.getElementById('reportFilterStatus') ? document.getElementById('reportFilterStatus').value : 'ALL';
             const cat = document.getElementById('reportFilterCategory') ? document.getElementById('reportFilterCategory').value : 'ALL';
             const q = document.getElementById('reportSearch') ? document.getElementById('reportSearch').value.toLowerCase().trim() : '';
 
             const terms = q.split(/\s+/).filter(Boolean);
 
-            let filtered = cacheReports.filter(it => {
+            const list = cacheReports.filter(it => {
                 if (status !== 'ALL') {
                     if (status === 'เกินกำหนด' && it.current_status !== 'เกินกำหนด') return false;
                     if (status === 'กำลังยืม' && it.tx_status !== 'กำลังยืม') return false;
@@ -1934,6 +1943,26 @@
                 }
                 return true;
             });
+
+            let statusLabel = 'ทุกสถานะ (ทั้งหมด)';
+            if (status === 'กำลังยืม') statusLabel = 'เฉพาะอยู่ระหว่างการยืม (Active)';
+            else if (status === 'เกินกำหนด') statusLabel = 'เฉพาะเกินกำหนดส่งคืน (Overdue)';
+            else if (status === 'คืนแล้ว') statusLabel = 'เฉพาะส่งคืนเรียบร้อยแล้ว (Returned)';
+
+            let categoryLabel = cat === 'ALL' ? 'ทุกหมวดหมู่อุปกรณ์' : cat;
+
+            return {
+                list,
+                status,
+                statusLabel,
+                category: cat,
+                categoryLabel,
+                searchQuery: q
+            };
+        }
+
+        function filterReportsTable() {
+            const { list: filtered } = getFilteredReportData();
 
             // Update Report KPIs
             const total = filtered.length;
@@ -2006,15 +2035,16 @@
 
         // Export Borrow Report to Excel (Official Government 14-Column Layout)
         function exportBorrowReportExcel() {
-            if (cacheReports.length === 0) {
+            const meta = getFilteredReportData();
+            const exportItems = meta.list.length > 0 ? meta.list : cacheReports;
+
+            if (exportItems.length === 0) {
                 alert('ไม่มีข้อมูลรายงานสำหรับส่งออก');
                 return;
             }
 
             const today = new Date().toISOString().split('T')[0];
-            const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-            const excelData = cacheReports.map((it, idx) => ({
+            const excelData = exportItems.map((it, idx) => ({
                 "ลำดับ": idx + 1,
                 "เลขที่ใบยืม": it.tx_id,
                 "เลขครุภัณฑ์ (CAD ID)": it.asset_code || "-",
@@ -2038,33 +2068,604 @@
             XLSX.utils.book_append_sheet(wb, ws, "รายงานยืม-คืนราชการ");
 
             XLSX.writeFile(wb, `CAD_Gov_Lending_Report_${today}.xlsx`);
-            logAudit('EXPORT_REPORT', 'FILE', `CAD_Gov_Lending_Report_${today}.xlsx`, `ส่งออกรายงานพัสดุราชการ Excel รวม ${cacheReports.length} รายการ`);
+            logAudit('EXPORT_REPORT', 'FILE', `CAD_Gov_Lending_Report_${today}.xlsx`, `ส่งออกรายงานพัสดุราชการ Excel (${meta.statusLabel}) รวม ${exportItems.length} รายการ`);
         }
 
-        // Print Borrow Report (Formal printable view with CMU Header and 4-party signatures)
-        function printBorrowReport() {
-            const meta = document.getElementById('print-report-meta');
+        // Build Dedicated Formal Thai Government A4 Landscape Printable HTML (Form พด.ยค-๐๑)
+        function buildFormalGovReportHtml(items, meta) {
             const now = new Date();
-            if (meta) {
-                meta.innerText = `วันที่พิมพ์รายงาน: ${now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} • ผู้พิมพ์: ${currentUser ? currentUser.full_name : 'เจ้าหน้าที่พัสดุ'}`;
+            const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+            const creator = currentUser ? (currentUser.full_name || currentUser.username) : 'เจ้าหน้าที่งานพัสดุ';
+            const creatorRole = currentUser ? (currentUser.role || 'เจ้าหน้าที่') : 'เจ้าหน้าที่งานพัสดุ';
+
+            const total = items.length;
+            const active = items.filter(f => f.tx_status === 'กำลังยืม' && f.current_status !== 'เกินกำหนด').length;
+            const overdue = items.filter(f => f.current_status === 'เกินกำหนด').length;
+            const returned = items.filter(f => f.tx_status === 'คืนแล้ว').length;
+
+            const formatShortDate = (d) => {
+                if (!d || d === '-') return '-';
+                try {
+                    const dateObj = new Date(d);
+                    if (isNaN(dateObj.getTime())) return d;
+                    return dateObj.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' });
+                } catch(e) {
+                    return d;
+                }
+            };
+
+            const rowsHtml = items.map((it, idx) => {
+                const isOverdue = it.current_status === 'เกินกำหนด';
+                const isReturned = it.tx_status === 'คืนแล้ว';
+                
+                let statusHtml = '';
+                if (isOverdue) {
+                    statusHtml = `<span class="gov-tag tag-overdue">เกินกำหนด (${it.days_overdue || 0} วัน)</span>`;
+                } else if (isReturned) {
+                    statusHtml = `<span class="gov-tag tag-returned">คืนแล้ว</span>`;
+                } else {
+                    statusHtml = `<span class="gov-tag tag-active">กำลังยืม</span>`;
+                }
+
+                const borrowDate = formatShortDate(it.borrow_date);
+                const dueDate = formatShortDate(it.due_date);
+                const returnDate = it.return_date ? formatShortDate(it.return_date) : (isReturned ? 'คืนแล้ว' : '-');
+
+                return `
+                    <tr>
+                        <td class="text-center font-bold text-muted">${idx + 1}</td>
+                        <td class="text-center mono font-bold" style="color: #6b21a8;">${it.tx_id || '-'}</td>
+                        <td class="text-center mono text-muted" style="font-size: 7.2pt;">${it.asset_code || '-'}</td>
+                        <td>
+                            <div class="font-bold">${it.asset_name || '-'}</div>
+                            <div class="text-muted" style="font-size: 6.8pt;">หมวด: ${it.category || '-'}</div>
+                        </td>
+                        <td class="text-center mono" style="font-size: 7.2pt;">${it.serial_number || '-'}</td>
+                        <td>
+                            <div class="font-bold">${it.borrower_name || '-'}</div>
+                            <div class="text-muted" style="font-size: 6.8pt;">${it.department || '-'}</div>
+                        </td>
+                        <td class="text-center mono" style="font-size: 7.2pt;">${it.phone || '-'}</td>
+                        <td class="text-center">${borrowDate}</td>
+                        <td class="text-center font-bold" style="${isOverdue ? 'color: #991b1b;' : ''}">${dueDate}</td>
+                        <td class="text-center">${returnDate}</td>
+                        <td class="text-center text-muted" style="font-size: 7pt;">${it.condition || '01 - ปกติ'}</td>
+                        <td class="text-center">${statusHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>แบบรายงานสรุปการยืม-คืนพัสดุและครุภัณฑ์ (พด.ยค-๐๑) - มช.</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 8mm 8mm 8mm 8mm;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body {
+            font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+            font-size: 8pt;
+            line-height: 1.4;
+            color: #0f172a;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        .report-page-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        /* Top Navigation Bar on Screen */
+        .screen-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e293b;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .screen-toolbar button {
+            cursor: pointer;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 13px;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-print {
+            background: #8b5cf6;
+            color: white;
+        }
+        .btn-print:hover {
+            background: #7c3aed;
+        }
+        .btn-close {
+            background: #475569;
+            color: white;
+        }
+        .btn-close:hover {
+            background: #334155;
+        }
+        /* Document Header */
+        .doc-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+        .header-logo {
+            width: 52px;
+            height: 52px;
+            border: 1.5px solid #0f172a;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            font-size: 20px;
+            font-weight: 900;
+            color: #6b21a8;
+        }
+        .header-title-box {
+            flex: 1;
+            text-align: center;
+            padding: 0 10px;
+        }
+        .header-univ {
+            font-size: 10pt;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+        .header-dept {
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #334155;
+            margin-top: 1px;
+        }
+        .header-main-title {
+            font-size: 12.5pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin-top: 2px;
+        }
+        .header-law {
+            font-size: 7.2pt;
+            color: #64748b;
+            margin-top: 1px;
+        }
+        .header-form-badge {
+            width: 95px;
+            text-align: right;
+        }
+        .badge-form {
+            display: inline-block;
+            border: 1.5px solid #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 8pt;
+            font-weight: 800;
+            background: #f1f5f9;
+        }
+        .fiscal-year {
+            font-size: 7.2pt;
+            color: #475569;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+        /* Metadata Strip */
+        .meta-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 7.8pt;
+            color: #334155;
+            padding: 3px 6px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            margin-bottom: 6px;
+        }
+        /* Summary Box */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .summary-cell {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 3px 6px;
+            background: #ffffff;
+            text-align: center;
+        }
+        .summary-label {
+            font-size: 6.8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .summary-val {
+            font-size: 10.5pt;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-top: 1px;
+        }
+        /* Main Report Table */
+        table.gov-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 7.6pt;
+        }
+        table.gov-table thead {
+            display: table-header-group;
+        }
+        table.gov-table tr {
+            page-break-inside: avoid;
+        }
+        table.gov-table th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 700;
+            text-align: center;
+            padding: 4px 3px;
+            border: 1px solid #334155;
+            font-size: 7.6pt;
+            line-height: 1.25;
+            vertical-align: middle;
+        }
+        table.gov-table td {
+            border: 1px solid #475569;
+            padding: 3px 3px;
+            vertical-align: middle;
+            color: #0f172a;
+            line-height: 1.3;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        table.gov-table tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .text-muted { color: #64748b; }
+        .font-bold { font-weight: 700; }
+        
+        /* Status Badges */
+        .gov-tag {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 6.8pt;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.15;
+            white-space: nowrap;
+        }
+        .tag-active {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        .tag-overdue {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .tag-returned {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        /* Legal Note */
+        .legal-note {
+            margin-top: 6px;
+            padding: 4px 8px;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            background-color: #f8fafc;
+            font-size: 7pt;
+            color: #334155;
+            line-height: 1.35;
+            page-break-inside: avoid;
+        }
+        /* 3 Official Government Signatures */
+        .sig-block-container {
+            margin-top: 16px;
+            border-top: 1.5px solid #0f172a;
+            padding-top: 10px;
+            page-break-inside: avoid;
+        }
+        .sig-table {
+            width: 100%;
+            border: none;
+            table-layout: fixed;
+            text-align: center;
+        }
+        .sig-cell {
+            border: none !important;
+            vertical-align: top;
+            padding: 0 8px;
+            font-size: 8pt;
+        }
+        .sig-role {
+            font-weight: 800;
+            font-size: 8.5pt;
+            color: #0f172a;
+            margin-bottom: 24px;
+        }
+        .sig-dots {
+            font-family: inherit;
+            color: #1e293b;
+            margin-bottom: 3px;
+        }
+        .sig-title {
+            font-size: 7.2pt;
+            color: #475569;
+            margin-bottom: 2px;
+        }
+        .sig-date {
+            font-size: 7.2pt;
+            color: #0f172a;
+        }
+        .doc-footer {
+            margin-top: 8px;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 6.8pt;
+            color: #94a3b8;
+        }
+        @media screen {
+            body {
+                background: #f1f5f9;
+                padding: 16px;
+            }
+            .report-page-container {
+                background: white;
+                padding: 10mm 10mm;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+                border-radius: 8px;
+                max-width: 1150px;
+            }
+        }
+        @media print {
+            .screen-toolbar {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            .report-page-container {
+                box-shadow: none !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-page-container">
+        <!-- Screen Toolbar (Only shown on screen) -->
+        <div class="screen-toolbar">
+            <div style="font-size: 13px; font-weight: bold;">
+                📄 ตัวอย่างแบบรายงานราชการ พด.ยค-๐๑ (A4 แนวนอน พร้อมพิมพ์/บันทึก PDF)
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="window.print()" class="btn-print">
+                    🖨️ สั่งพิมพ์ / บันทึก PDF (Print)
+                </button>
+                <button onclick="window.close()" class="btn-close">
+                    ✕ ปิดหน้านี้ (Close)
+                </button>
+            </div>
+        </div>
+
+        <!-- Document Official Header -->
+        <div class="doc-header">
+            <div class="header-logo">มช.</div>
+            <div class="header-title-box">
+                <div class="header-univ">มหาวิทยาลัยเชียงใหม่ • CHIANG MAI UNIVERSITY</div>
+                <div class="header-dept">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย (งานพัสดุและครุภัณฑ์คอมพิวเตอร์)</div>
+                <div class="header-main-title">แบบรายงานสรุปและตรวจสอบการยืม - คืนพัสดุและครุภัณฑ์</div>
+                <div class="header-law">ตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙</div>
+            </div>
+            <div class="header-form-badge">
+                <div class="badge-form">แบบ พด.ยค-๐๑</div>
+                <div class="fiscal-year">ปีงบประมาณ ๒๕๖๙</div>
+            </div>
+        </div>
+
+        <!-- Metadata Strip -->
+        <div class="meta-strip">
+            <div><b>หน่วยงานผู้ควบคุม:</b> กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div><b>ขอบเขตข้อมูล:</b> ${meta.statusLabel || 'ทุกสถานะ'} ${meta.categoryLabel !== 'ทุกหมวดหมู่อุปกรณ์' ? '• ' + meta.categoryLabel : ''}</div>
+            <div><b>วันที่ออกรายงาน:</b> ${dateStr} เวลา ${timeStr}</div>
+            <div><b>ผู้พิมพ์:</b> ${creator} (${creatorRole})</div>
+        </div>
+
+        <!-- KPI Summary Strip -->
+        <div class="summary-grid">
+            <div class="summary-cell">
+                <div class="summary-label" style="color: #64748b;">รวมพัสดุในรายงาน</div>
+                <div class="summary-val" style="color: #0f172a;">${total} รายการ</div>
+            </div>
+            <div class="summary-cell">
+                <div class="summary-label" style="color: #b45309;">อยู่ระหว่างการยืม (Active)</div>
+                <div class="summary-val" style="color: #b45309;">${active} รายการ</div>
+            </div>
+            <div class="summary-cell">
+                <div class="summary-label" style="color: #b91c1c;">เกินกำหนดส่งคืน (Overdue)</div>
+                <div class="summary-val" style="color: #b91c1c;">${overdue} รายการ</div>
+            </div>
+            <div class="summary-cell">
+                <div class="summary-label" style="color: #047857;">ส่งคืนเรียบร้อยแล้ว (Returned)</div>
+                <div class="summary-val" style="color: #047857;">${returned} รายการ</div>
+            </div>
+        </div>
+
+        <!-- Main Report Data Table (100% fixed-width, zero-clipping) -->
+        <table class="gov-table">
+            <colgroup>
+                <col style="width: 3%;">
+                <col style="width: 7%;">
+                <col style="width: 11%;">
+                <col style="width: 16%;">
+                <col style="width: 9%;">
+                <col style="width: 14%;">
+                <col style="width: 7%;">
+                <col style="width: 6%;">
+                <col style="width: 6%;">
+                <col style="width: 6%;">
+                <col style="width: 7%;">
+                <col style="width: 8%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>ลำดับ</th>
+                    <th>เลขที่ใบยืม</th>
+                    <th>เลขครุภัณฑ์ (CAD ID)</th>
+                    <th>รายการพัสดุและยี่ห้อ/รุ่น</th>
+                    <th>Serial Number</th>
+                    <th>ผู้ยืม / หน่วยงานสังกัด</th>
+                    <th>เบอร์โทร</th>
+                    <th>วันที่ยืม</th>
+                    <th>กำหนดส่งคืน</th>
+                    <th>วันที่คืนจริง</th>
+                    <th>สภาพพัสดุ</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml || '<tr><td colspan="12" style="text-align: center; padding: 24px; color: #94a3b8;">ไม่พบข้อมูลรายการพัสดุตามเงื่อนไขที่เลือก</td></tr>'}
+            </tbody>
+        </table>
+
+        <!-- Legal Compliance Box -->
+        <div class="legal-note">
+            <b>ข้อกำหนดตามระเบียบพัสดุภาครัฐ:</b> การยืมพัสดุและครุภัณฑ์ราชการนี้ เป็นไปตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙ การควบคุมและการจำหน่ายพัสดุ ผู้ยืมมีหน้าที่ต้องระวังรักษาพัสดุที่ยืมไปมิให้สูญหายหรือเสียหาย หากเกิดความเสียหาย ชำรุด หรือสูญหาย ผู้ยืมต้องรับผิดชอบชดใช้ค่าเสียหายตามระเบียบของทางราชการ
+        </div>
+
+        <!-- 3 Official Government Signatures -->
+        <div class="sig-block-container">
+            <table class="sig-table">
+                <tr>
+                    <td class="sig-cell">
+                        <div class="sig-role">๑. ผู้ยืม</div>
+                        <div class="sig-dots">ลงชื่อ ................................................................</div>
+                        <div class="sig-dots">( ................................................................ )</div>
+                        <div class="sig-title">ผู้ยืมพัสดุ / ผู้ครอบครอง</div>
+                        <div class="sig-date">วันที่ ......... / ......... / ................</div>
+                    </td>
+                    <td class="sig-cell">
+                        <div class="sig-role">๒. เจ้าหน้าที่</div>
+                        <div class="sig-dots">ลงชื่อ ................................................................</div>
+                        <div class="sig-dots">( ................................................................ )</div>
+                        <div class="sig-title">เจ้าหน้าที่งานพัสดุและครุภัณฑ์</div>
+                        <div class="sig-date">วันที่ ......... / ......... / ................</div>
+                    </td>
+                    <td class="sig-cell">
+                        <div class="sig-role">๓. ผู้อำนวยการ</div>
+                        <div class="sig-dots">ลงชื่อ ................................................................</div>
+                        <div class="sig-dots">( ................................................................ )</div>
+                        <div class="sig-title">ผู้อำนวยการกองบริหารงานกลาง</div>
+                        <div class="sig-date">วันที่ ......... / ......... / ................</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Document Footer -->
+        <div class="doc-footer">
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์คอมพิวเตอร์ SmartCAD-Lending (v1.9.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
+        </div>
+    </div>
+</body>
+</html>`;
+        }
+
+        // Print Borrow Report (Direct A4 Landscape Print via Dedicated Clean Iframe)
+        function printBorrowReport() {
+            const meta = getFilteredReportData();
+            const reportHtml = buildFormalGovReportHtml(meta.list, meta);
+
+            let printIframe = document.getElementById('reportPrintIframe');
+            if (!printIframe) {
+                printIframe = document.createElement('iframe');
+                printIframe.id = 'reportPrintIframe';
+                printIframe.style.position = 'fixed';
+                printIframe.style.right = '0';
+                printIframe.style.bottom = '0';
+                printIframe.style.width = '0';
+                printIframe.style.height = '0';
+                printIframe.style.border = '0';
+                document.body.appendChild(printIframe);
             }
 
-            const total = cacheReports.length;
-            const active = cacheReports.filter(f => f.tx_status === 'กำลังยืม' && f.current_status !== 'เกินกำหนด').length;
-            const overdue = cacheReports.filter(f => f.current_status === 'เกินกำหนด').length;
-            const returned = cacheReports.filter(f => f.tx_status === 'คืนแล้ว').length;
+            const doc = printIframe.contentWindow.document;
+            doc.open();
+            doc.write(reportHtml);
+            doc.close();
 
-            const elTot = document.getElementById('print-stat-total');
-            const elAct = document.getElementById('print-stat-active');
-            const elOvd = document.getElementById('print-stat-overdue');
-            const elRet = document.getElementById('print-stat-returned');
-            if (elTot) elTot.innerText = total;
-            if (elAct) elAct.innerText = active;
-            if (elOvd) elOvd.innerText = overdue;
-            if (elRet) elRet.innerText = returned;
+            logAudit('PRINT_REPORT', 'DOCUMENT', 'แบบ พด.ยค-๐๑', `สั่งพิมพ์รายงานราชการแบบ พด.ยค-๐๑ (${meta.statusLabel}) รวม ${meta.list.length} รายการ`);
 
-            logAudit('PRINT_REPORT', 'DOCUMENT', 'แบบ พด.ยค-๐๑', `สั่งพิมพ์รายงานราชการแบบ พด.ยค-๐๑ รวม ${total} รายการ`);
-            window.print();
+            setTimeout(() => {
+                try {
+                    printIframe.contentWindow.focus();
+                    printIframe.contentWindow.print();
+                } catch (e) {
+                    console.error("Iframe print error, falling back to open window:", e);
+                    openFormalReportTab();
+                }
+            }, 350);
+        }
+
+        // Open Dedicated Formal Report Tab for Full-Screen Review & Printing
+        function openFormalReportTab() {
+            const meta = getFilteredReportData();
+            const reportHtml = buildFormalGovReportHtml(meta.list, meta);
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.open();
+                win.document.write(reportHtml);
+                win.document.close();
+                logAudit('VIEW_REPORT', 'DOCUMENT', 'แบบ พด.ยค-๐๑', `เปิดดูตัวอย่างรายงานราชการเต็มหน้าแบบ พด.ยค-๐๑ (${meta.statusLabel}) รวม ${meta.list.length} รายการ`);
+            } else {
+                alert('โปรดอนุญาตให้เปิดหน้าต่างป๊อปอัป (Popup) เพื่อดูรายงานเต็มหน้า');
+            }
         }
 
         // One-Click Export to CAD-Inventory Excel Format (Full 55-Column Official CMU Template)
@@ -2234,8 +2835,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v1.8.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.8.0 ระบบ User Management บันทึกลง Supabase Database โดยตรง 100% พร้อม Bcrypt Hashing และรองรับการเข้าสู่ระบบทันที",
+                        target_id: "v1.9.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.9.0 ปรับปรุงระบบออกรายงานมาตรฐานราชการแบบ พด.ยค-๐๑ (A4 แนวนอน ไม่แหว่ง ลายเซ็น 3 ฝ่าย) พร้อม User Management Bcrypt 100%",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -2412,7 +3013,7 @@
         }
 
         // ==========================================
-        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE DIRECT CLOUD SYNC v1.8.0)
+        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE DIRECT CLOUD SYNC v1.9.0)
         // ==========================================
 
         async function loadSystemUsers() {
@@ -2820,7 +3421,7 @@
 
         function copySupabaseUserSql() {
             const sql = `-- ============================================================
--- 🚀 SmartCAD-Lending User Management & RBAC Stored Procedures v1.8.0
+-- 🚀 SmartCAD-Lending User Management & RBAC Stored Procedures v1.9.0
 -- กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่
 -- คัดลอกโค้ดนี้ไปวางและกด Run ที่ Supabase SQL Editor
 -- ============================================================
