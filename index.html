@@ -293,7 +293,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.4.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.5.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -432,7 +432,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.4.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.5.0</span>
                 </div>
             </div>
         </aside>
@@ -712,9 +712,6 @@
                     <div><b>เกินกำหนดส่งคืน:</b> <span id="print-stat-overdue" class="font-bold text-rose-700">0</span> รายการ</div>
                     <div><b>ส่งคืนเรียบร้อยแล้ว:</b> <span id="print-stat-returned" class="font-bold text-emerald-700">0</span> รายการ</div>
                 </div>
-                    <div><b>เกินกำหนดส่งคืน:</b> <span id="print-stat-overdue" class="font-bold text-rose-700">0</span> รายการ</div>
-                    <div><b>ส่งคืนเรียบร้อยแล้ว:</b> <span id="print-stat-returned" class="font-bold text-emerald-700">0</span> รายการ</div>
-                </div>
 
                 <!-- Report Action & Filter Bar (Hidden on Print) -->
                 <div id="report-filter-bar" class="apple-liquid-glass p-5 rounded-3xl border border-slate-200 dark:border-darkslate-800 space-y-4">
@@ -724,7 +721,7 @@
                                 <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
                                 <span>ออกรายงานสรุปการยืม-คืนอุปกรณ์และครุภัณฑ์</span>
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มมาตรฐาน (พด.ยค-๐๑) รองรับการพิมพ์รายงาน A4 แนวนอน พร้อมช่องลงนาม 4 ฝ่าย</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มมาตรฐาน (พด.ยค-๐๑) รองรับการพิมพ์รายงาน A4 แนวนอน พร้อมช่องลงนาม 3 ฝ่าย (ผู้ยืม, เจ้าหน้าที่, ผู้อำนวยการ)</p>
                         </div>
 
                         <!-- Action Buttons -->
@@ -2011,8 +2008,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v1.4.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.4.0 พร้อมปรับปรุงโครงสร้างตารางและช่องลงนาม 3 ฝ่าย",
+                        target_id: "v1.5.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.5.0 แก้ไขความผิดเพี้ยนของ Layout และปรับปรุง UX/UI เต็มรูปแบบ",
                         ip_address: "10.155.40.1"
                     },
                     {
