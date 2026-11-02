@@ -707,10 +707,7 @@
                             <h1 class="text-base font-black mt-1 text-slate-950">แบบรายงานสรุปและตรวจสอบการยืม - คืนพัสดุและครุภัณฑ์</h1>
                             <p class="text-[10px] text-slate-600">ตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙</p>
                         </div>
-                        <div class="w-28 text-right text-[9px] text-slate-700 leading-tight">
-                            <div class="font-bold border border-slate-400 p-1 rounded bg-slate-50">แบบ พด.ยค-๐๑</div>
-                            <div class="mt-1">ปีงบประมาณ ๒๕๖๙</div>
-                        </div>
+                        <div class="w-16"></div>
                     </div>
                     <div class="flex items-center justify-between text-[10px] text-slate-700 pt-2 border-t border-slate-300">
                         <div><b>หน่วยงานผู้ควบคุม:</b> กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</div>
@@ -735,12 +732,12 @@
                                 <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
                                 <span>ออกรายงานสรุปการยืม-คืนอุปกรณ์และครุภัณฑ์</span>
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มมาตรฐาน (พด.ยค-๐๑) รองรับการพิมพ์รายงาน A4 แนวนอน พร้อมช่องลงนาม 3 ฝ่าย (ผู้ยืม, เจ้าหน้าที่, ผู้อำนวยการ)</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">แบบฟอร์มรายงานมาตรฐานราชการ รองรับการพิมพ์รายงาน A4 แนวนอน พร้อมช่องลงนาม 3 ฝ่าย (ผู้ยืม, เจ้าหน้าที่, ผู้อำนวยการ)</p>
                         </div>
 
                         <!-- Action Buttons -->
                         <div id="report-action-buttons" class="flex flex-wrap items-center gap-2">
-                            <button onclick="printBorrowReport()" class="apple-btn-cmu px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer" title="พิมพ์รายงานฟอร์ม พด.ยค-๐๑ หรือบันทึก PDF ทันที">
+                            <button onclick="printBorrowReport()" class="apple-btn-cmu px-4 py-2 rounded-2xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer" title="พิมพ์รายงาน หรือบันทึก PDF ทันที">
                                 <i data-lucide="printer" class="w-4 h-4"></i>
                                 <span>พิมพ์รายงาน (A4/PDF)</span>
                             </button>
@@ -2144,7 +2141,7 @@
             logAudit('EXPORT_REPORT', 'FILE', `CAD_Gov_Lending_Report_${today}.xlsx`, `ส่งออกรายงานพัสดุราชการ Excel (${meta.statusLabel}) รวม ${exportItems.length} รายการ`);
         }
 
-        // Build Dedicated Formal Thai Government A4 Landscape Printable HTML (Form พด.ยค-๐๑)
+        // Build Dedicated Formal Thai Government A4 Landscape Printable HTML
         function buildFormalGovReportHtml(items, meta) {
             const now = new Date();
             const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -2223,7 +2220,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>แบบรายงานสรุปการยืม-คืนพัสดุและครุภัณฑ์ (พด.ยค-๐๑) - มช.</title>
+    <title>แบบรายงานสรุปการยืม-คืนพัสดุและครุภัณฑ์ - มหาวิทยาลัยเชียงใหม่</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -2564,7 +2561,7 @@
         <!-- Screen Toolbar (Only shown on screen) -->
         <div class="screen-toolbar">
             <div style="font-size: 13px; font-weight: bold;">
-                📄 ตัวอย่างแบบรายงานราชการ พด.ยค-๐๑ (A4 แนวนอน พร้อมพิมพ์/บันทึก PDF)
+                📄 ตัวอย่างแบบรายงานราชการ (A4 แนวนอน พร้อมพิมพ์/บันทึก PDF)
             </div>
             <div style="display: flex; gap: 8px;">
                 <button onclick="window.print()" class="btn-print">
@@ -2581,14 +2578,11 @@
             <div class="header-logo">มช.</div>
             <div class="header-title-box">
                 <div class="header-univ">มหาวิทยาลัยเชียงใหม่ • CHIANG MAI UNIVERSITY</div>
-                <div class="header-dept">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย (งานพัสดุและครุภัณฑ์คอมพิวเตอร์)</div>
+                <div class="header-dept">กองบริหารงานกลาง สำนักงานมหาวิทยาลัย (งานพัสดุและครุภัณฑ์)</div>
                 <div class="header-main-title">แบบรายงานสรุปและตรวจสอบการยืม - คืนพัสดุและครุภัณฑ์</div>
                 <div class="header-law">ตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ หมวด ๙</div>
             </div>
-            <div class="header-form-badge">
-                <div class="badge-form">แบบ พด.ยค-๐๑</div>
-                <div class="fiscal-year">ปีงบประมาณ ๒๕๖๙</div>
-            </div>
+            <div style="width: 52px;"></div>
         </div>
 
         <!-- Metadata Strip -->
@@ -2692,7 +2686,7 @@
 
         <!-- Document Footer -->
         <div class="doc-footer">
-            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์คอมพิวเตอร์ SmartCAD-Lending (v2.0.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.0.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
             <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
         </div>
     </div>
@@ -2723,7 +2717,7 @@
             doc.write(reportHtml);
             doc.close();
 
-            logAudit('PRINT_REPORT', 'DOCUMENT', 'แบบ พด.ยค-๐๑', `สั่งพิมพ์รายงานราชการแบบ พด.ยค-๐๑ (${meta.statusLabel}) รวม ${meta.list.length} รายการ`);
+            logAudit('PRINT_REPORT', 'DOCUMENT', 'รายงานยืม-คืนราชการ', `สั่งพิมพ์รายงานราชการ (${meta.statusLabel}) รวม ${meta.list.length} รายการ`);
 
             setTimeout(() => {
                 try {
@@ -2745,7 +2739,7 @@
                 win.document.open();
                 win.document.write(reportHtml);
                 win.document.close();
-                logAudit('VIEW_REPORT', 'DOCUMENT', 'แบบ พด.ยค-๐๑', `เปิดดูตัวอย่างรายงานราชการเต็มหน้าแบบ พด.ยค-๐๑ (${meta.statusLabel}) รวม ${meta.list.length} รายการ`);
+                logAudit('VIEW_REPORT', 'DOCUMENT', 'รายงานยืม-คืนราชการ', `เปิดดูตัวอย่างรายงานราชการเต็มหน้า (${meta.statusLabel}) รวม ${meta.list.length} รายการ`);
             } else {
                 alert('โปรดอนุญาตให้เปิดหน้าต่างป๊อปอัป (Popup) เพื่อดูรายงานเต็มหน้า');
             }
