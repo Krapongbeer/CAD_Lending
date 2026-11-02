@@ -1297,6 +1297,15 @@
                 .replace(/'/g, '&#39;');
         }
 
+        // 🛡️ CSV / Excel Formula Injection Prevention (CWE-1236 v2.0.0)
+        function sanitizeExcelVal(val) {
+            if (val === null || val === undefined) return '';
+            if (typeof val === 'string' && /^[=+\-@\t\r]/.test(val)) {
+                return "'" + val; // Neutralize formula execution in Excel / Calc
+            }
+            return val;
+        }
+
         // Security Architecture: No plaintext credentials in client code.
         // Authentication is verified securely on PostgreSQL Engine via Supabase RPC (Bcrypt salted hash)
         let currentUser = null;
@@ -2110,21 +2119,21 @@
             const today = new Date().toISOString().split('T')[0];
             const excelData = exportItems.map((it, idx) => ({
                 "ลำดับ": idx + 1,
-                "เลขที่ใบยืม": it.tx_id,
-                "เลขครุภัณฑ์ (CAD ID)": it.asset_code || "-",
-                "รายการพัสดุและยี่ห้อ/รุ่น": it.asset_name,
-                "หมายเลขเครื่อง (S/N)": it.serial_number || "-",
-                "หมวดหมู่พัสดุ": it.category || "-",
-                "ชื่อ-สกุลผู้ยืม": it.borrower_name,
-                "ส่วนงาน/สังกัด": it.department,
-                "เบอร์โทรศัพท์": it.phone || "-",
+                "เลขที่ใบยืม": sanitizeExcelVal(it.tx_id),
+                "เลขครุภัณฑ์ (CAD ID)": sanitizeExcelVal(it.asset_code || "-"),
+                "รายการพัสดุและยี่ห้อ/รุ่น": sanitizeExcelVal(it.asset_name),
+                "หมายเลขเครื่อง (S/N)": sanitizeExcelVal(it.serial_number || "-"),
+                "หมวดหมู่พัสดุ": sanitizeExcelVal(it.category || "-"),
+                "ชื่อ-สกุลผู้ยืม": sanitizeExcelVal(it.borrower_name),
+                "ส่วนงาน/สังกัด": sanitizeExcelVal(it.department),
+                "เบอร์โทรศัพท์": sanitizeExcelVal(it.phone || "-"),
                 "วันที่ยืม": new Date(it.borrow_date).toLocaleDateString('th-TH'),
                 "กำหนดส่งคืน": new Date(it.due_date).toLocaleDateString('th-TH'),
                 "วันที่คืนจริง": it.return_date ? new Date(it.return_date).toLocaleDateString('th-TH') : "-",
-                "สภาพพัสดุ": it.condition || "01 - สภาพดี/ปกติ",
-                "สถานะรายการ": it.current_status,
+                "สภาพพัสดุ": sanitizeExcelVal(it.condition || "01 - สภาพดี/ปกติ"),
+                "สถานะรายการ": sanitizeExcelVal(it.current_status),
                 "เกินกำหนด (วัน)": it.days_overdue > 0 ? it.days_overdue : 0,
-                "วัตถุประสงค์/หมายเหตุ": it.remark || "-"
+                "วัตถุประสงค์/หมายเหตุ": sanitizeExcelVal(it.remark || "-")
             }));
 
             const ws = XLSX.utils.json_to_sheet(excelData);
@@ -2585,9 +2594,9 @@
         <!-- Metadata Strip -->
         <div class="meta-strip">
             <div><b>หน่วยงานผู้ควบคุม:</b> กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
-            <div><b>ขอบเขตข้อมูล:</b> ${meta.statusLabel || 'ทุกสถานะ'} ${meta.categoryLabel !== 'ทุกหมวดหมู่อุปกรณ์' ? '• ' + meta.categoryLabel : ''}</div>
+            <div><b>ขอบเขตข้อมูล:</b> ${escapeHtml(meta.statusLabel || 'ทุกสถานะ')} ${meta.categoryLabel !== 'ทุกหมวดหมู่อุปกรณ์' ? '• ' + escapeHtml(meta.categoryLabel) : ''}</div>
             <div><b>วันที่ออกรายงาน:</b> ${dateStr} เวลา ${timeStr}</div>
-            <div><b>ผู้พิมพ์:</b> ${creator} (${creatorRole})</div>
+            <div><b>ผู้พิมพ์:</b> ${escapeHtml(creator)} (${escapeHtml(creatorRole)})</div>
         </div>
 
         <!-- KPI Summary Strip -->
@@ -2754,9 +2763,9 @@
             // 55 Columns exactly matching the official CAD-Inventory import template
             const exportData = cacheHandoff.map((item, index) => ({
                 "ลำดับ": index + 1,
-                "รหัสสินทรัพย์ (ID)": item.asset_code || "",
-                "คีย์สินทรัพย์": item.asset_code || "",
-                "ซีเรียลนัมเบอร์": item.serial_number || "",
+                "รหัสสินทรัพย์ (ID)": sanitizeExcelVal(item.asset_code || ""),
+                "คีย์สินทรัพย์": sanitizeExcelVal(item.asset_code || ""),
+                "ซีเรียลนัมเบอร์": sanitizeExcelVal(item.serial_number || ""),
                 "จำนวน": 1,
                 "วันที่ทำรายการ": item.parcel_assigned_at ? new Date(item.parcel_assigned_at).toISOString().split('T')[0] : today,
                 "กองทุน": "",
@@ -2766,7 +2775,7 @@
                 "หลักสูตร": "",
                 "รหัสกองแผน": "",
                 "แหล่งเงิน": "01",
-                "ชุดชนิด": item.category || "",
+                "ชุดชนิด": sanitizeExcelVal(item.category || ""),
                 "อาคาร": "70201",
                 "ชั้น/ห้อง": "",
                 "วันที่เริ่มคิดค่าเสื่อม": "",
@@ -2790,7 +2799,7 @@
                 "จำนวนปีที่ใช้งาน": 5,
                 "คิดค่าเสื่อม": "YES",
                 "ซาก": 1,
-                "คำอธิบาย": item.asset_name || "",
+                "คำอธิบาย": sanitizeExcelVal(item.asset_name || ""),
                 "รายละเอียด1": "",
                 "รายละเอียด2": "",
                 "รายละเอียด3": "",
