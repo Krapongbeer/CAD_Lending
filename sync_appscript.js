@@ -9,6 +9,7 @@
 const CONFIG = {
   SUPABASE_URL: "https://undafgcijvuhvdmyjatk.supabase.co",
   SUPABASE_KEY: "YOUR_SUPABASE_SECRET_KEY", // นำ SUPABASE_SECRET_KEY จาก .env มาวางตรงนี้
+  SYNC_TOKEN: "CAD_SECURE_SYNC_TOKEN_2026", // 🛡️ Secret Token สำหรับป้องกัน Unauthorized Webhook Trigger
   SHEET_ASSETS: "assets",
   SHEET_TRANSACTIONS: "borrow_transactions"
 };
@@ -22,8 +23,17 @@ function doGet(e) {
   if (action === 'ping') {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'ok',
-      message: 'GAS Web App is active',
+      message: 'GAS Web App is active (v2.0.0 Secured)',
       timestamp: new Date().toISOString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 🛡️ ตรวจสอบ Secret Token เพื่อป้องกันคำขอก่อกวน
+  const token = e && e.parameter && e.parameter.token;
+  if (CONFIG.SYNC_TOKEN && token !== CONFIG.SYNC_TOKEN) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: '401 Unauthorized: Token ไม่ถูกต้องหรือไม่ได้รับอนุญาต'
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -51,6 +61,15 @@ function doPost(e) {
       body = JSON.parse(e.postData.contents);
     }
   } catch (err) {}
+
+  // 🛡️ ตรวจสอบ Secret Token
+  const token = (e && e.parameter && e.parameter.token) || (body && body.token);
+  if (CONFIG.SYNC_TOKEN && token !== CONFIG.SYNC_TOKEN) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: '401 Unauthorized: Token ไม่ถูกต้องหรือไม่ได้รับอนุญาต'
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 
   const resAssets = syncAssetsToSupabase();
   const resTx = syncTransactionsToSupabase();

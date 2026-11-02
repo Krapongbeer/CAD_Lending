@@ -298,7 +298,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v1.9.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.0.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -444,7 +444,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v1.9.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.0.0</span>
                 </div>
             </div>
         </aside>
@@ -1150,6 +1150,16 @@
                     <input type="email" id="newEmail" placeholder="เช่น officer@cmu.ac.th" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs">
                 </div>
 
+                <!-- 🛡️ Superadmin Re-authentication Password Field (Security v2.0.0) -->
+                <div class="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 space-y-1">
+                    <label class="block font-bold text-[11px] flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-amber-600"></i>
+                        <span>รหัสผ่านยืนยันสิทธิ์ Superadmin (Re-authentication) *</span>
+                    </label>
+                    <input type="password" id="adminConfirmPassword" required placeholder="กรอกรหัสผ่าน Superadmin ของคุณเพื่อยืนยันคำสั่ง" class="w-full px-3 py-2 bg-white dark:bg-darkslate-900 border border-amber-300 dark:border-amber-700 rounded-xl focus:ring-2 focus:ring-amber-500 text-xs font-mono">
+                    <p class="text-[10px] text-amber-700 dark:text-amber-400">ระบบจะทำการตรวจสอบรหัสผ่านจริงกับ Supabase Engine ก่อนอนุญาตให้สร้างบัญชี</p>
+                </div>
+
                 <div id="userModalError" class="hidden p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-[11px]"></div>
 
                 <div class="pt-3 flex gap-2">
@@ -1276,6 +1286,17 @@
             return API_HEADERS;
         }
 
+        // 🛡️ Context-Aware HTML Escaping Utility for XSS Prevention (Security v2.0.0)
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // Security Architecture: No plaintext credentials in client code.
         // Authentication is verified securely on PostgreSQL Engine via Supabase RPC (Bcrypt salted hash)
         let currentUser = null;
@@ -1305,7 +1326,17 @@
         function checkAuth() {
             try {
                 const saved = localStorage.getItem("cad_lending_user");
-                if (saved) currentUser = JSON.parse(saved);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    const validRoles = ['superadmin', 'admin', 'staff', 'executive'];
+                    if (parsed && parsed.username && validRoles.includes(parsed.role)) {
+                        currentUser = parsed;
+                    } else {
+                        console.warn("Invalid session data detected, clearing session.");
+                        localStorage.removeItem("cad_lending_user");
+                        currentUser = null;
+                    }
+                }
             } catch(e) { currentUser = null; }
 
             const viewLogin = document.getElementById("view-login");
@@ -1735,7 +1766,7 @@
             renderBorrowingsTable(cacheBorrowings);
         }
 
-        // Render Borrowings Table
+        // Render Borrowings Table (Sanitized against XSS v2.0.0)
         function renderBorrowingsTable(list) {
             const tbody = document.getElementById('tbodyBorrowings');
             if (list.length === 0) {
@@ -1746,35 +1777,42 @@
             tbody.innerHTML = list.map(item => {
                 const isOverdue = item.current_status === 'เกินกำหนด';
                 const statusBadge = isOverdue 
-                    ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">เกินกำหนด (${item.days_overdue} วัน)</span>`
+                    ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">เกินกำหนด (${Number(item.days_overdue) || 0} วัน)</span>`
                     : `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">กำลังยืม</span>`;
 
-                const dueDate = new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-                const borrowDate = new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+                const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+                const borrowDate = item.borrow_date ? new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+
+                const safeTxId = escapeHtml(item.tx_id);
+                const safeAssetName = escapeHtml(item.asset_name);
+                const safeSn = escapeHtml(item.serial_number);
+                const safeBorrower = escapeHtml(item.borrower_name);
+                const safeDept = escapeHtml(item.department);
+                const safePhone = escapeHtml(item.phone);
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
-                        <td class="p-3.5 font-mono font-bold text-cmu-800 dark:text-cmu-300">${item.tx_id}</td>
+                        <td class="p-3.5 font-mono font-bold text-cmu-800 dark:text-cmu-300">${safeTxId}</td>
                         <td class="p-3.5">
-                            <div class="font-bold text-slate-900 dark:text-white">${item.asset_name}</div>
-                            <div class="text-[11px] font-mono text-slate-400">SN: ${item.serial_number}</div>
+                            <div class="font-bold text-slate-900 dark:text-white">${safeAssetName}</div>
+                            <div class="text-[11px] font-mono text-slate-400">SN: ${safeSn}</div>
                         </td>
                         <td class="p-3.5">
-                            <div class="font-bold text-slate-800 dark:text-slate-200">${item.borrower_name}</div>
-                            <div class="text-[11px] text-slate-400">${item.department} ${item.phone ? '• ' + item.phone : ''}</div>
+                            <div class="font-bold text-slate-800 dark:text-slate-200">${safeBorrower}</div>
+                            <div class="text-[11px] text-slate-400">${safeDept} ${safePhone ? '• ' + safePhone : ''}</div>
                         </td>
                         <td class="p-3.5 text-slate-500 font-mono text-[11px]">${borrowDate}</td>
                         <td class="p-3.5 font-bold font-mono text-[11px] ${isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${dueDate}</td>
                         <td class="p-3.5">${statusBadge}</td>
                         <td class="p-3.5 text-center">
                             <div class="flex items-center justify-center gap-1.5">
-                                ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo}', 'รูปผู้ยืม: ${item.borrower_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-4 h-4"></i></button>` : ''}
-                                ${item.equip_borrow_photo ? `<button onclick="viewEvidence('${item.equip_borrow_photo}', 'สภาพอุปกรณ์: ${item.asset_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="รูปอุปกรณ์"><i data-lucide="camera" class="w-4 h-4"></i></button>` : ''}
-                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature}', 'ลายเซ็นอิเล็กทรอนิกส์: ${item.borrower_name}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-4 h-4"></i></button>` : ''}
+                                ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo.replace(/'/g, "\\'")}', 'รูปผู้ยืม: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-4 h-4"></i></button>` : ''}
+                                ${item.equip_borrow_photo ? `<button onclick="viewEvidence('${item.equip_borrow_photo.replace(/'/g, "\\'")}', 'สภาพอุปกรณ์: ${safeAssetName.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="รูปอุปกรณ์"><i data-lucide="camera" class="w-4 h-4"></i></button>` : ''}
+                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature.replace(/'/g, "\\'")}', 'ลายเซ็นอิเล็กทรอนิกส์: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1.5 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-xl text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-4 h-4"></i></button>` : ''}
                             </div>
                         </td>
                         <td class="p-3.5 text-center">
-                            <button onclick="openRenewModal('${item.tx_id}', '${item.asset_id}', '${item.asset_name}', '${item.borrower_name}', '${item.due_date}')" class="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-xs font-bold inline-flex items-center gap-1 transition shadow-2xs cursor-pointer" title="ขอขยายเวลายืม (ต่ออายุ)">
+                            <button onclick="openRenewModal('${safeTxId}', '${escapeHtml(item.asset_id)}', '${safeAssetName.replace(/'/g, "\\'")}', '${safeBorrower.replace(/'/g, "\\'")}', '${item.due_date}')" class="px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-xs font-bold inline-flex items-center gap-1 transition shadow-2xs cursor-pointer" title="ขอขยายเวลายืม (ต่ออายุ)">
                                 <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-500"></i>
                                 <span>ต่ออายุ</span>
                             </button>
@@ -1785,7 +1823,7 @@
             lucide.createIcons();
         }
 
-        // Render Assets Table
+        // Render Assets Table (Sanitized against XSS v2.0.0)
         function renderAssetsTable(list) {
             const tbody = document.getElementById('tbodyAssets');
             if (list.length === 0) {
@@ -1796,23 +1834,29 @@
             tbody.innerHTML = list.map(a => {
                 const borrowBadge = a.borrow_status === 'ว่าง'
                     ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">ว่าง</span>`
-                    : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">${a.borrow_status}</span>`;
+                    : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">${escapeHtml(a.borrow_status)}</span>`;
 
                 const regBadge = a.reg_status === 'รอเลขครุภัณฑ์'
                     ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">รอเลขครุภัณฑ์</span>`
                     : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">มีเลขครุภัณฑ์แล้ว</span>`;
 
+                const safeAssetId = escapeHtml(a.asset_id);
+                const safeSn = escapeHtml(a.serial_number);
+                const safeName = escapeHtml(a.asset_name);
+                const safeCat = escapeHtml(a.category || '-');
+                const safeCode = a.asset_code ? escapeHtml(a.asset_code) : '<span class="text-slate-300 dark:text-slate-600">-</span>';
+
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
-                        <td class="p-3.5 font-mono font-bold text-slate-700 dark:text-slate-300">${a.asset_id}</td>
-                        <td class="p-3.5 font-mono text-slate-900 dark:text-slate-100 font-bold">${a.serial_number}</td>
-                        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${a.asset_name}</td>
-                        <td class="p-3.5 text-slate-500">${a.category || '-'}</td>
+                        <td class="p-3.5 font-mono font-bold text-slate-700 dark:text-slate-300">${safeAssetId}</td>
+                        <td class="p-3.5 font-mono text-slate-900 dark:text-slate-100 font-bold">${safeSn}</td>
+                        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${safeName}</td>
+                        <td class="p-3.5 text-slate-500">${safeCat}</td>
                         <td class="p-3.5">${regBadge}</td>
                         <td class="p-3.5">${borrowBadge}</td>
-                        <td class="p-3.5 font-mono font-bold text-purple-700 dark:text-purple-400">${a.asset_code || '<span class="text-slate-300 dark:text-slate-600">-</span>'}</td>
+                        <td class="p-3.5 font-mono font-bold text-purple-700 dark:text-purple-400">${safeCode}</td>
                         <td class="p-3.5 text-center">
-                            <button onclick="openQrModal('${a.asset_id}', '${a.serial_number}', '${a.asset_name.replace(/'/g, "\\'")}', '${a.asset_code || 'รอเลขครุภัณฑ์'}')" class="p-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-900/40 text-cmu-700 dark:text-cmu-300 hover:bg-cmu-100 transition shadow-2xs" title="พิมพ์ป้าย QR Code">
+                            <button onclick="openQrModal('${safeAssetId}', '${safeSn}', '${safeName.replace(/'/g, "\\'")}', '${escapeHtml(a.asset_code || 'รอเลขครุภัณฑ์').replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-900/40 text-cmu-700 dark:text-cmu-300 hover:bg-cmu-100 transition shadow-2xs" title="พิมพ์ป้าย QR Code">
                                 <i data-lucide="qr-code" class="w-4 h-4"></i>
                             </button>
                         </td>
@@ -1821,7 +1865,7 @@
             }).join('');
         }
 
-        // Render CAD Handoff Table
+        // Render CAD Handoff Table (Sanitized against XSS v2.0.0)
         function renderHandoffTable(list) {
             const tbody = document.getElementById('tbodyHandoff');
             if (list.length === 0) {
@@ -1830,15 +1874,25 @@
             }
 
             tbody.innerHTML = list.map(it => {
-                const dateStr = new Date(it.parcel_assigned_at).toLocaleDateString('th-TH');
+                const safeId = escapeHtml(it.asset_id);
+                const safeCode = escapeHtml(it.asset_code);
+                const safeName = escapeHtml(it.asset_name);
+                const safeSn = escapeHtml(it.serial_number);
+                const safeCat = escapeHtml(it.category);
+                const parcelDate = it.parcel_assigned_at ? new Date(it.parcel_assigned_at).toLocaleDateString('th-TH') : '-';
+
                 return `
-                    <tr class="hover:bg-purple-50/40 dark:hover:bg-purple-950/20 transition">
-                        <td class="p-3.5 font-mono font-extrabold text-purple-800 dark:text-purple-300 text-sm">${it.asset_code}</td>
-                        <td class="p-3.5 font-mono font-bold text-slate-800 dark:text-slate-200">${it.serial_number}</td>
-                        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${it.asset_name}</td>
-                        <td class="p-3.5 text-slate-500">${it.category}</td>
-                        <td class="p-3.5 font-mono text-[11px] text-slate-500">${dateStr}</td>
-                        <td class="p-3.5"><span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-300">${it.borrow_status}</span></td>
+                    <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
+                        <td class="p-3.5 font-mono font-bold text-purple-800 dark:text-purple-300">${safeCode}</td>
+                        <td class="p-3.5 font-bold text-slate-900 dark:text-white">${safeName}</td>
+                        <td class="p-3.5 font-mono text-slate-600 dark:text-slate-400">${safeSn}</td>
+                        <td class="p-3.5 text-slate-500">${safeCat}</td>
+                        <td class="p-3.5 font-mono text-slate-500 text-[11px]">${parcelDate}</td>
+                        <td class="p-3.5 text-center">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>พร้อมโอน
+                            </span>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -2001,30 +2055,40 @@
                 const borrowDate = item.borrow_date ? new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : "-";
                 const returnDate = item.return_date ? new Date(item.return_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : (isReturned ? "ส่งคืนแล้ว" : "-");
 
+                const safeTxId = escapeHtml(item.tx_id);
+                const safeAssetCode = item.asset_code ? escapeHtml(item.asset_code) : "-";
+                const safeAssetName = escapeHtml(item.asset_name);
+                const safeSn = escapeHtml(item.serial_number || "-");
+                const safeCat = escapeHtml(item.category || "-");
+                const safeBorrower = escapeHtml(item.borrower_name);
+                const safeDept = escapeHtml(item.department);
+                const safePhone = escapeHtml(item.phone || "-");
+                const safeCondition = escapeHtml(item.condition || "01 - สภาพดี/ปกติ");
+
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
                         <td class="p-3 text-center text-slate-400 font-mono text-xs">${idx + 1}</td>
-                        <td class="p-3 font-mono font-bold text-cmu-800 dark:text-cmu-300 text-xs">${item.tx_id}</td>
-                        <td class="p-3 font-mono text-[11px] text-slate-700 dark:text-slate-300">${item.asset_code || "-"}</td>
+                        <td class="p-3 font-mono font-bold text-cmu-800 dark:text-cmu-300 text-xs">${safeTxId}</td>
+                        <td class="p-3 font-mono text-[11px] text-slate-700 dark:text-slate-300">${safeAssetCode}</td>
                         <td class="p-3">
-                            <div class="font-bold text-slate-900 dark:text-white text-xs">${item.asset_name}</div>
+                            <div class="font-bold text-slate-900 dark:text-white text-xs">${safeAssetName}</div>
                         </td>
-                        <td class="p-3 font-mono text-[11px] text-slate-500">${item.serial_number || "-"}</td>
-                        <td class="p-3 text-xs text-slate-600 dark:text-slate-300">${item.category || "-"}</td>
+                        <td class="p-3 font-mono text-[11px] text-slate-500">${safeSn}</td>
+                        <td class="p-3 text-xs text-slate-600 dark:text-slate-300">${safeCat}</td>
                         <td class="p-3">
-                            <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">${item.borrower_name}</div>
-                            <div class="text-[10px] text-slate-400">${item.department}</div>
+                            <div class="font-bold text-slate-800 dark:text-slate-200 text-xs">${safeBorrower}</div>
+                            <div class="text-[10px] text-slate-400">${safeDept}</div>
                         </td>
-                        <td class="p-3 font-mono text-[11px] text-slate-500">${item.phone || "-"}</td>
+                        <td class="p-3 font-mono text-[11px] text-slate-500">${safePhone}</td>
                         <td class="p-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">${borrowDate}</td>
                         <td class="p-3 font-bold font-mono text-[11px] ${isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}">${dueDate}</td>
                         <td class="p-3 font-mono text-[11px] ${isReturned ? 'text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-500'}">${returnDate}</td>
-                        <td class="p-3 text-[11px] text-slate-600 dark:text-slate-300">${item.condition || "01 - สภาพดี/ปกติ"}</td>
+                        <td class="p-3 text-[11px] text-slate-600 dark:text-slate-300">${safeCondition}</td>
                         <td class="p-3">${statusBadge}</td>
                         <td class="p-3 text-center no-print">
                             <div class="flex items-center justify-center gap-1">
-                                ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo}', 'รูปผู้ยืม: ${item.borrower_name}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-3.5 h-3.5"></i></button>` : ''}
-                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature}', 'ลายเซ็น: ${item.borrower_name}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo.replace(/'/g, "\\'")}', 'รูปผู้ยืม: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature.replace(/'/g, "\\'")}', 'ลายเซ็น: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-3.5 h-3.5"></i></button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -2112,25 +2176,35 @@
                 const dueDate = formatShortDate(it.due_date);
                 const returnDate = it.return_date ? formatShortDate(it.return_date) : (isReturned ? 'คืนแล้ว' : '-');
 
+                const safeTxId = escapeHtml(it.tx_id || '-');
+                const safeAssetCode = escapeHtml(it.asset_code || '-');
+                const safeAssetName = escapeHtml(it.asset_name || '-');
+                const safeCat = escapeHtml(it.category || '-');
+                const safeSn = escapeHtml(it.serial_number || '-');
+                const safeBorrower = escapeHtml(it.borrower_name || '-');
+                const safeDept = escapeHtml(it.department || '-');
+                const safePhone = escapeHtml(it.phone || '-');
+                const safeCondition = escapeHtml(it.condition || '01 - ปกติ');
+
                 return `
                     <tr>
                         <td class="text-center font-bold text-muted">${idx + 1}</td>
-                        <td class="text-center mono font-bold" style="color: #6b21a8;">${it.tx_id || '-'}</td>
-                        <td class="text-center mono text-muted" style="font-size: 7.2pt;">${it.asset_code || '-'}</td>
+                        <td class="text-center mono font-bold" style="color: #6b21a8;">${safeTxId}</td>
+                        <td class="text-center mono text-muted" style="font-size: 7.2pt;">${safeAssetCode}</td>
                         <td>
-                            <div class="font-bold">${it.asset_name || '-'}</div>
-                            <div class="text-muted" style="font-size: 6.8pt;">หมวด: ${it.category || '-'}</div>
+                            <div class="font-bold">${safeAssetName}</div>
+                            <div class="text-muted" style="font-size: 6.8pt;">หมวด: ${safeCat}</div>
                         </td>
-                        <td class="text-center mono" style="font-size: 7.2pt;">${it.serial_number || '-'}</td>
+                        <td class="text-center mono" style="font-size: 7.2pt;">${safeSn}</td>
                         <td>
-                            <div class="font-bold">${it.borrower_name || '-'}</div>
-                            <div class="text-muted" style="font-size: 6.8pt;">${it.department || '-'}</div>
+                            <div class="font-bold">${safeBorrower}</div>
+                            <div class="text-muted" style="font-size: 6.8pt;">${safeDept}</div>
                         </td>
-                        <td class="text-center mono" style="font-size: 7.2pt;">${it.phone || '-'}</td>
+                        <td class="text-center mono" style="font-size: 7.2pt;">${safePhone}</td>
                         <td class="text-center">${borrowDate}</td>
                         <td class="text-center font-bold" style="${isOverdue ? 'color: #991b1b;' : ''}">${dueDate}</td>
                         <td class="text-center">${returnDate}</td>
-                        <td class="text-center text-muted" style="font-size: 7pt;">${it.condition || '01 - ปกติ'}</td>
+                        <td class="text-center text-muted" style="font-size: 7pt;">${safeCondition}</td>
                         <td class="text-center">${statusHtml}</td>
                     </tr>
                 `;
@@ -2609,7 +2683,7 @@
 
         <!-- Document Footer -->
         <div class="doc-footer">
-            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์คอมพิวเตอร์ SmartCAD-Lending (v1.9.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์คอมพิวเตอร์ SmartCAD-Lending (v2.0.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
             <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
         </div>
     </div>
@@ -2835,8 +2909,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v1.9.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v1.9.0 ปรับปรุงระบบออกรายงานมาตรฐานราชการแบบ พด.ยค-๐๑ (A4 แนวนอน ไม่แหว่ง ลายเซ็น 3 ฝ่าย) พร้อม User Management Bcrypt 100%",
+                        target_id: "v2.0.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.0.0 สถาปัตยกรรมความปลอดภัยระดับสูง (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -2910,6 +2984,14 @@
                 const timeStr = dt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const badgeClass = actionBadgeMap[l.action] || 'bg-slate-100 text-slate-800 border-slate-200';
 
+                const safeUser = escapeHtml(l.username);
+                const safeRole = escapeHtml(l.user_role);
+                const safeAction = escapeHtml(l.action);
+                const safeTargetType = escapeHtml(l.target_type || '-');
+                const safeTargetId = escapeHtml(l.target_id || '-');
+                const safeDetails = escapeHtml(l.details || '-');
+                const safeIp = escapeHtml(l.ip_address || 'web-client');
+
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
                         <td class="p-3 whitespace-nowrap text-slate-500 font-mono text-[10px]">
@@ -2918,21 +3000,21 @@
                         </td>
                         <td class="p-3 font-sans">
                             <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>${l.username}</span>
-                                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-darkslate-800 text-slate-600 dark:text-slate-400">${l.user_role}</span>
+                                <span>${safeUser}</span>
+                                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-darkslate-800 text-slate-600 dark:text-slate-400">${safeRole}</span>
                             </div>
                         </td>
                         <td class="p-3">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">${l.action}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">${safeAction}</span>
                         </td>
                         <td class="p-3 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-                            <span class="text-[10px] text-slate-400">[${l.target_type}]</span> ${l.target_id}
+                            <span class="text-[10px] text-slate-400">[${safeTargetType}]</span> ${safeTargetId}
                         </td>
-                        <td class="p-3 font-sans text-xs text-slate-700 dark:text-slate-300 max-w-xs sm:max-w-md truncate" title="${l.details}">
-                            ${l.details}
+                        <td class="p-3 font-sans text-xs text-slate-700 dark:text-slate-300 max-w-xs sm:max-w-md truncate" title="${safeDetails}">
+                            ${safeDetails}
                         </td>
                         <td class="p-3 text-[10px] text-slate-400 font-mono">
-                            ${l.ip_address || 'web'}
+                            ${safeIp}
                         </td>
                     </tr>
                 `;
@@ -3013,7 +3095,7 @@
         }
 
         // ==========================================
-        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE DIRECT CLOUD SYNC v1.9.0)
+        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE DIRECT CLOUD SYNC v2.0.0)
         // ==========================================
 
         async function loadSystemUsers() {
@@ -3128,25 +3210,30 @@
                 const isCurrent = currentUser && currentUser.username === u.username;
                 const isSuper = u.username === 'superadmin';
                 const badgeClass = roleBadges[u.role] || 'bg-slate-100 text-slate-800 border-slate-200';
-                const label = roleLabels[u.role] || u.role;
+                const label = roleLabels[u.role] || escapeHtml(u.role);
+
+                const safeUser = escapeHtml(u.username);
+                const safeName = escapeHtml(u.full_name || u.username);
+                const safeEmail = escapeHtml(u.email || '-');
+                const safeDept = escapeHtml(u.department || 'กองบริหารงานกลาง มช.');
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
                         <td class="p-3 font-mono font-bold text-slate-900 dark:text-white">
                             <div class="flex items-center gap-1.5">
-                                <span>${u.username}</span>
+                                <span>${safeUser}</span>
                                 ${isCurrent ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-sans font-bold">บัญชีของคุณ</span>' : ''}
                             </div>
                         </td>
                         <td class="p-3 text-slate-800 dark:text-slate-200 font-sans">
-                            <div class="font-bold">${u.full_name || u.username}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">${u.email || '-'}</div>
+                            <div class="font-bold">${safeName}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${safeEmail}</div>
                         </td>
                         <td class="p-3 font-sans">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${badgeClass}">${label}</span>
                         </td>
                         <td class="p-3 text-slate-600 dark:text-slate-400 text-xs font-sans">
-                            ${u.department || 'กองบริหารงานกลาง มช.'}
+                            ${safeDept}
                         </td>
                         <td class="p-3 font-sans">
                             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold ${u.is_active !== false ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
@@ -3159,10 +3246,10 @@
                                 <span class="text-[10px] text-slate-400 italic">ผู้ดูแลหลัก</span>
                             ` : `
                                 <div class="inline-flex items-center gap-1.5">
-                                    <button onclick="toggleUserStatus('${u.username}', ${u.is_active === false})" class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-darkslate-800 dark:hover:bg-darkslate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer" title="${u.is_active !== false ? 'ระงับการใช้งานชั่วคราว' : 'เปิดใช้งานบัญชี'}">
+                                    <button onclick="toggleUserStatus('${safeUser.replace(/'/g, "\\'")}', ${u.is_active === false})" class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-darkslate-800 dark:hover:bg-darkslate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer" title="${u.is_active !== false ? 'ระงับการใช้งานชั่วคราว' : 'เปิดใช้งานบัญชี'}">
                                         <i data-lucide="${u.is_active !== false ? 'user-x' : 'user-check'}" class="w-3.5 h-3.5"></i>
                                     </button>
-                                    <button onclick="deleteUser('${u.username}')" class="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer" title="ลบผู้ใช้งานถาวร">
+                                    <button onclick="deleteUser('${safeUser.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer" title="ลบผู้ใช้งานถาวร">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                         <span>ลบ</span>
                                     </button>
@@ -3212,11 +3299,20 @@
             const role = document.getElementById("newRole").value;
             const dept = document.getElementById("newDepartment").value.trim() || 'กองบริหารงานกลาง';
             const email = document.getElementById("newEmail").value.trim();
+            const adminPass = document.getElementById("adminConfirmPassword") ? document.getElementById("adminConfirmPassword").value : "";
             const errBox = document.getElementById("userModalError");
 
             if (!u || !p || !name) {
                 if (errBox) {
                     errBox.innerText = "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน";
+                    errBox.classList.remove("hidden");
+                }
+                return;
+            }
+
+            if (!adminPass) {
+                if (errBox) {
+                    errBox.innerText = "กรุณากรอกรหัสผ่าน Superadmin ของคุณเพื่อยืนยันสิทธิ์ความปลอดภัย";
                     errBox.classList.remove("hidden");
                 }
                 return;
@@ -3241,20 +3337,21 @@
             const btn = document.getElementById("btnSaveUser");
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-white"></i> <span>กำลังบันทึกข้อมูล...</span>';
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-white"></i> <span>กำลังตรวจสอบสิทธิ์และบันทึก...</span>';
                 if (window.lucide) lucide.createIcons();
             }
 
             const passwordHash = hashPasswordBcrypt(p) || `$2a$10$localHash_${btoa(p)}`;
             let syncedToSupabase = false;
 
-            // 1. Try Supabase RPC admin_create_user
+            // 1. Try Supabase RPC admin_create_user (Hardened v2.0.0 with Superadmin Re-authentication)
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_create_user`, {
                     method: "POST",
                     headers: API_HEADERS,
                     body: JSON.stringify({
                         p_admin_username: currentUser ? currentUser.username : "superadmin",
+                        p_admin_password: adminPass,
                         p_new_username: u,
                         p_password: p,
                         p_full_name: name,
@@ -3266,12 +3363,25 @@
 
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && data.success) syncedToSupabase = true;
+                    if (data && data.success) {
+                        syncedToSupabase = true;
+                    } else if (data && data.success === false) {
+                        if (errBox) {
+                            errBox.innerText = "⚠️ " + (data.message || "รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง");
+                            errBox.classList.remove("hidden");
+                        }
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> <span>บันทึกผู้ใช้</span>';
+                            if (window.lucide) lucide.createIcons();
+                        }
+                        return;
+                    }
                 }
             } catch(_) {}
 
-            // 2. Try Direct REST Insert using custom admin header if configured
-            if (!syncedToSupabase) {
+            // 2. Try Direct REST Insert using custom admin secret key if configured
+            if (!syncedToSupabase && localStorage.getItem("cad_supabase_secret_key")) {
                 try {
                     const directRes = await fetch(`${SUPABASE_URL}/rest/v1/system_users`, {
                         method: "POST",
@@ -3340,29 +3450,44 @@
                 return;
             }
 
-            if (!confirm(`คุณต้องการลบผู้ใช้งาน "${targetUsername}" ออกจากระบบใช่หรือไม่?\nการกระทำนี้จะลบบัญชีผู้ใช้และบันทึกใน Audit Log อย่างถาวร`)) {
+            // 🔒 Superadmin Password Re-authentication (Security v2.0.0)
+            const adminPass = prompt(`🔒 ยืนยันสิทธิ์ความปลอดภัย Superadmin:\nกรุณากรอกรหัสผ่าน Superadmin ของคุณเพื่อยืนยันการลบผู้ใช้ "${targetUsername}":`);
+            if (!adminPass) {
                 return;
             }
 
-            // 1. Try Supabase RPC delete
+            // 1. Try Supabase RPC delete with verified password
+            let deletedFromSupabase = false;
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_delete_user`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_delete_user`, {
                     method: "POST",
                     headers: API_HEADERS,
                     body: JSON.stringify({
                         p_admin_username: currentUser ? currentUser.username : "superadmin",
+                        p_admin_password: adminPass,
                         p_target_username: targetUsername
                     })
                 });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        deletedFromSupabase = true;
+                    } else if (data && data.success === false) {
+                        alert("⚠️ " + (data.message || "รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง"));
+                        return;
+                    }
+                }
             } catch(e) {}
 
-            // 2. Try direct REST delete with admin header
-            try {
-                await fetch(`${SUPABASE_URL}/rest/v1/system_users?username=eq.${encodeURIComponent(targetUsername)}`, {
-                    method: "DELETE",
-                    headers: getAdminHeaders()
-                });
-            } catch(e) {}
+            // 2. Try direct REST delete with admin secret key if configured
+            if (!deletedFromSupabase && localStorage.getItem("cad_supabase_secret_key")) {
+                try {
+                    await fetch(`${SUPABASE_URL}/rest/v1/system_users?username=eq.${encodeURIComponent(targetUsername)}`, {
+                        method: "DELETE",
+                        headers: getAdminHeaders()
+                    });
+                } catch(e) {}
+            }
 
             // 3. Update local cache
             cacheSystemUsers = cacheSystemUsers.filter(x => (x.username || '').toLowerCase() !== targetUsername.toLowerCase());
@@ -3380,34 +3505,49 @@
             }
 
             const actionText = newStatus ? "เปิดใช้งาน" : "ระงับชั่วคราว";
-            if (!confirm(`คุณต้องการเปลี่ยนสถานะบัญชี "${targetUsername}" เป็น "${actionText}" ใช่หรือไม่?`)) {
+            // 🔒 Superadmin Password Re-authentication (Security v2.0.0)
+            const adminPass = prompt(`🔒 ยืนยันสิทธิ์ความปลอดภัย Superadmin:\nกรุณากรอกรหัสผ่าน Superadmin ของคุณเพื่อยืนยันการ${actionText}บัญชี "${targetUsername}":`);
+            if (!adminPass) {
                 return;
             }
 
-            // 1. Try Supabase RPC
+            // 1. Try Supabase RPC with verified password
+            let toggledInSupabase = false;
             try {
-                await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_toggle_user_status`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_toggle_user_status`, {
                     method: "POST",
                     headers: API_HEADERS,
                     body: JSON.stringify({
                         p_admin_username: currentUser ? currentUser.username : "superadmin",
+                        p_admin_password: adminPass,
                         p_target_username: targetUsername,
                         p_is_active: newStatus
                     })
                 });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        toggledInSupabase = true;
+                    } else if (data && data.success === false) {
+                        alert("⚠️ " + (data.message || "รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง"));
+                        return;
+                    }
+                }
             } catch(e) {}
 
-            // 2. Try direct REST patch with admin header
-            try {
-                await fetch(`${SUPABASE_URL}/rest/v1/system_users?username=eq.${encodeURIComponent(targetUsername)}`, {
-                    method: "PATCH",
-                    headers: getAdminHeaders(),
-                    body: JSON.stringify({
-                        is_active: newStatus,
-                        updated_at: new Date().toISOString()
-                    })
-                });
-            } catch(e) {}
+            // 2. Try direct REST patch with admin secret key if configured
+            if (!toggledInSupabase && localStorage.getItem("cad_supabase_secret_key")) {
+                try {
+                    await fetch(`${SUPABASE_URL}/rest/v1/system_users?username=eq.${encodeURIComponent(targetUsername)}`, {
+                        method: "PATCH",
+                        headers: getAdminHeaders(),
+                        body: JSON.stringify({
+                            is_active: newStatus,
+                            updated_at: new Date().toISOString()
+                        })
+                    });
+                } catch(e) {}
+            }
 
             // 3. Update local cache
             const target = cacheSystemUsers.find(x => (x.username || '').toLowerCase() === targetUsername.toLowerCase());
@@ -3421,7 +3561,7 @@
 
         function copySupabaseUserSql() {
             const sql = `-- ============================================================
--- 🚀 SmartCAD-Lending User Management & RBAC Stored Procedures v1.9.0
+-- 🚀 SmartCAD-Lending User Management & RBAC Stored Procedures v2.0.0
 -- กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่
 -- คัดลอกโค้ดนี้ไปวางและกด Run ที่ Supabase SQL Editor
 -- ============================================================
@@ -3450,9 +3590,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_list_users(TEXT) TO anon, authenticated;
 
--- 2. ฟังก์ชันเพิ่มผู้ใช้งานพร้อมคำนวณ Bcrypt Hash บน Database Engine
+-- 2. ฟังก์ชันเพิ่มผู้ใช้งานพร้อม Re-authentication รหัสผ่าน Superadmin (v2.0.0)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_admin_username TEXT,
+    p_admin_password TEXT,
     p_new_username TEXT,
     p_password TEXT,
     p_full_name TEXT,
@@ -3462,6 +3603,7 @@ CREATE OR REPLACE FUNCTION admin_create_user(
 )
 RETURNS JSONB AS $$
 DECLARE
+    v_admin RECORD;
     v_clean_user TEXT;
     v_clean_role TEXT;
 BEGIN
@@ -3469,7 +3611,30 @@ BEGIN
     v_clean_role := LOWER(TRIM(p_role));
 
     IF v_clean_role NOT IN ('superadmin', 'admin', 'staff', 'executive') THEN
-        RETURN jsonb_build_object('success', false, 'message', 'บทบาทไม่ถูกต้อง');
+        RETURN jsonb_build_object('success', false, 'message', 'บทบาทไม่ถูกต้อง (ต้องเป็น superadmin, admin, staff, หรือ executive)');
+    END IF;
+
+    -- ยืนยันตัวตน Superadmin ด้วยรหัสผ่านจริง
+    SELECT id, username, password_hash, role, is_active
+    INTO v_admin
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_admin_username));
+
+    IF NOT FOUND OR v_admin.is_active = FALSE OR v_admin.role != 'superadmin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
+    END IF;
+
+    IF p_admin_password IS NULL OR TRIM(p_admin_password) = '' OR v_admin.password_hash != crypt(p_admin_password, v_admin.password_hash) THEN
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+        VALUES (
+            COALESCE(p_admin_username, 'unknown'),
+            'attacker',
+            'SECURITY_ALERT',
+            'USER_MGMT',
+            'UNAUTHORIZED_ATTEMPT',
+            format('พยายามสร้างผู้ใช้ %s โดยไม่ใส่รหัสผ่าน Superadmin ที่ถูกต้อง (Authorization Failed)', v_clean_user)
+        );
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง');
     END IF;
 
     IF EXISTS (SELECT 1 FROM system_users WHERE LOWER(username) = v_clean_user) THEN
@@ -3487,48 +3652,138 @@ BEGIN
         true
     );
 
+    INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+    VALUES (
+        v_admin.username,
+        'superadmin',
+        'USER_MANAGEMENT',
+        'USER',
+        v_clean_user,
+        format('สร้างผู้ใช้งานใหม่: %s (บทบาท: %s, ชื่อ: %s)', v_clean_user, v_clean_role, TRIM(p_full_name))
+    );
+
     RETURN jsonb_build_object('success', true, 'message', 'สร้างผู้ใช้งานและซิงก์ลง Supabase สำเร็จ');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 3. ฟังก์ชันลบผู้ใช้งาน
+-- 3. ฟังก์ชันลบผู้ใช้งานพร้อม Re-authentication รหัสผ่าน Superadmin (v2.0.0)
 CREATE OR REPLACE FUNCTION admin_delete_user(
     p_admin_username TEXT,
+    p_admin_password TEXT,
     p_target_username TEXT
 )
 RETURNS JSONB AS $$
+DECLARE
+    v_admin RECORD;
+    v_clean_target TEXT;
 BEGIN
-    IF LOWER(TRIM(p_target_username)) = 'superadmin' THEN
+    v_clean_target := LOWER(TRIM(p_target_username));
+
+    IF v_clean_target = 'superadmin' THEN
         RETURN jsonb_build_object('success', false, 'message', 'ไม่อนุญาตให้ลบบัญชี Superadmin หลัก');
     END IF;
 
-    DELETE FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_target_username));
+    SELECT id, username, password_hash, role, is_active
+    INTO v_admin
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_admin_username));
+
+    IF NOT FOUND OR v_admin.is_active = FALSE OR v_admin.role != 'superadmin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
+    END IF;
+
+    IF p_admin_password IS NULL OR TRIM(p_admin_password) = '' OR v_admin.password_hash != crypt(p_admin_password, v_admin.password_hash) THEN
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+        VALUES (
+            COALESCE(p_admin_username, 'unknown'),
+            'attacker',
+            'SECURITY_ALERT',
+            'USER_MGMT',
+            'UNAUTHORIZED_ATTEMPT',
+            format('พยายามลบผู้ใช้ %s โดยไม่ใส่รหัสผ่าน Superadmin ที่ถูกต้อง (Authorization Failed)', v_clean_target)
+        );
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง');
+    END IF;
+
+    DELETE FROM system_users WHERE LOWER(username) = v_clean_target;
+
+    INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+    VALUES (
+        v_admin.username,
+        'superadmin',
+        'USER_MANAGEMENT',
+        'USER',
+        v_clean_target,
+        format('ลบผู้ใช้งาน: %s ออกจากระบบและฐานข้อมูล Supabase', v_clean_target)
+    );
+
     RETURN jsonb_build_object('success', true, 'message', 'ลบผู้ใช้งานสำเร็จ');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 4. ฟังก์ชันเปิด/ระงับบัญชีผู้ใช้
+-- 4. ฟังก์ชันเปิด/ระงับบัญชีผู้ใช้พร้อม Re-authentication รหัสผ่าน Superadmin (v2.0.0)
 CREATE OR REPLACE FUNCTION admin_toggle_user_status(
     p_admin_username TEXT,
+    p_admin_password TEXT,
     p_target_username TEXT,
     p_is_active BOOLEAN
 )
 RETURNS JSONB AS $$
+DECLARE
+    v_admin RECORD;
+    v_clean_target TEXT;
 BEGIN
-    IF LOWER(TRIM(p_target_username)) = 'superadmin' AND p_is_active = FALSE THEN
+    v_clean_target := LOWER(TRIM(p_target_username));
+
+    IF v_clean_target = 'superadmin' AND p_is_active = FALSE THEN
         RETURN jsonb_build_object('success', false, 'message', 'ไม่อนุญาตให้ระงับบัญชี Superadmin หลัก');
     END IF;
 
-    UPDATE system_users SET is_active = p_is_active, updated_at = NOW() WHERE LOWER(username) = LOWER(TRIM(p_target_username));
+    SELECT id, username, password_hash, role, is_active
+    INTO v_admin
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_admin_username));
+
+    IF NOT FOUND OR v_admin.is_active = FALSE OR v_admin.role != 'superadmin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
+    END IF;
+
+    IF p_admin_password IS NULL OR TRIM(p_admin_password) = '' OR v_admin.password_hash != crypt(p_admin_password, v_admin.password_hash) THEN
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+        VALUES (
+            COALESCE(p_admin_username, 'unknown'),
+            'attacker',
+            'SECURITY_ALERT',
+            'USER_MGMT',
+            'UNAUTHORIZED_ATTEMPT',
+            format('พยายามเปลี่ยนสถานะผู้ใช้ %s โดยไม่ใส่รหัสผ่าน Superadmin ที่ถูกต้อง (Authorization Failed)', v_clean_target)
+        );
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง');
+    END IF;
+
+    UPDATE system_users 
+    SET is_active = p_is_active, updated_at = NOW() 
+    WHERE LOWER(username) = v_clean_target;
+
+    INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+    VALUES (
+        v_admin.username,
+        'superadmin',
+        'USER_MANAGEMENT',
+        'USER',
+        v_clean_target,
+        format('เปลี่ยนสถานะผู้ใช้งาน %s เป็น %s', v_clean_target, CASE WHEN p_is_active THEN 'เปิดใช้งาน' ELSE 'ระงับชั่วคราว' END)
+    );
+
     RETURN jsonb_build_object('success', true, 'message', 'อัปเดตสถานะสำเร็จ');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, BOOLEAN) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 `;
 
             if (navigator.clipboard && navigator.clipboard.writeText) {

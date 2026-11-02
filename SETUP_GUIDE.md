@@ -16,28 +16,33 @@
    - สร้างตาราง `assets` และ `borrow_transactions` พร้อม Index & Constraint ครบถ้วน
    - สร้าง Trigger สำหรับ Auto-Sync สถานะยืม-คืนอัตโนมัติ
    - สร้าง View สรุปข้อมูลสำหรับหน้า Dashboard และ View สำหรับส่งต่อ (Handoff) ไปยัง CAD-Inventory
-   - **🛡️ Enterprise Security & Authentication (ระบบผู้ใช้และความปลอดภัยระดับองค์กร):**
+   - **🛡️ Enterprise Security & Authentication (สถาปัตยกรรมความปลอดภัยระดับองค์กร v2.0.0 Hardened):**
      - เปิดใช้งาน Extension `pgcrypto` สำหรับคำนวณ Bcrypt Hash บน Database Engine
-     - สร้างตาราง `system_users` พร้อม Row Level Security (RLS) บล็อกการอ่านจาก Public 100%
-     - สร้าง Stored Procedure `authenticate_user(p_username, p_password)` พร้อมกลไกป้องกัน Timing Attack
+     - สร้างตาราง `system_users` พร้อม Row Level Security (RLS) บล็อกการอ่านและแก้ไขจาก Public 100%
+     - **Superadmin Re-authentication**: Stored Procedures สำหรับจัดการระบบ (`admin_create_user`, `admin_delete_user`, `admin_toggle_user_status`) บังคับตรวจสอบรหัสผ่านจริงของ Superadmin ทุกครั้ง ป้องกันการปลอมแปลงสิทธิ์ (Authorization Bypass)
+     - **Strict Row-Level Security (RLS)**: ปิดกั้นสิทธิ์ `DELETE` บนตาราง `assets` และ `borrow_transactions` สำหรับผู้ใช้ทั่วไปโดยเด็ดขาด ป้องกันการสั่งล้างข้อมูลผ่าน REST API
+     - **Immutable Append-Only Audit Trail**: ตาราง `audit_logs` อนุญาตเฉพาะ `SELECT` และ `INSERT` ปิดกั้น `UPDATE` และ `DELETE` 100% ป้องกันการทำลายหลักฐานประวัติระบบ
+     - **Database-Level Brute-force Protection**: ตาราง `login_attempts` ติดตามการพยายามล็อกอินผิด หากผิดเกิน 5 ครั้งภายใน 15 นาที ระบบจะระงับการล็อกอินอัตโนมัติ 15 นาที พร้อมแจ้งเตือนลง Security Audit Log
+     - **Universal XSS Protection**: หน้าเว็บผ่านการ Sanitized ข้อมูลอินพุตทุกฟิลด์ด้วย `escapeHtml()` ป้องกันการโจมตีแบบ Stored XSS 100%
+     - **Webhook Security**: Google Apps Script และ Endpoint มีระบบตรวจสอบ `SYNC_TOKEN` ป้องกันการทริกเกอร์โดยไม่ได้รับอนุญาต (HTTP 401 Unauthorized)
      - ซิงก์บัญชีผู้ใช้งานเริ่มต้น (`superadmin`, `admin`, `staff`, `executive`) ด้วย Bcrypt Hash ตรงกับ CAD-Inventory 100%
    - **📜 Enterprise Audit Logging System (นโยบายจัดเก็บประวัติ 90 วันตามมาตรฐานสากล):**
      - สร้างตาราง `audit_logs` พร้อม RLS และ Index ความเร็วสูงสำหรับจัดเก็บบันทึกประวัติ (Audit Trail)
      - นโยบายจัดเก็บและตรวจสอบประวัติย้อนหลัง 90 วัน พร้อมฟังก์ชัน Auto-Purge (`purge_audit_logs_older_than_90_days`)
-     - บันทึกทุกกิจกรรม: เข้าสู่ระบบ, ออกจากระบบ, จัดการผู้ใช้ (เพิ่ม/ลบ), ค้นหาข้อมูล, ส่งออก CAD Excel, พิมพ์รายงานราชการ, ซิงก์ข้อมูล
-   - **👥 ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (User Management & Supabase Direct Cloud Sync v1.9.0):**
+     - บันทึกทุกกิจกรรม: เข้าสู่ระบบ, ออกจากระบบ, ล็อกอินผิดพลาด/ถูกล็อก, จัดการผู้ใช้ (เพิ่ม/ลบ/เปลี่ยนสถานะ), ค้นหาข้อมูล, ส่งออก CAD Excel, พิมพ์รายงานราชการ, ซิงก์ข้อมูล, และเหตุการณ์ผิดปกติด้านความปลอดภัย (SECURITY_ALERT)
+   - **👥 ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (User Management & Supabase Direct Cloud Sync v2.0.0):**
      - Stored Procedures ระดับความปลอดภัยสูง: `admin_create_user`, `admin_delete_user`, `admin_list_users`, `admin_toggle_user_status`
      - Public Safe View `view_system_users` ป้องกันการรั่วไหลของรหัสผ่านหรือ hash 100%
-     - เมื่อ Superadmin กดเพิ่ม/ลบผู้ใช้ใน UI ระบบจะส่งคำสั่งไปยัง Supabase Cloud Database ทันที พร้อมแปลงรหัสผ่านเป็น Bcrypt Hash บน Database Engine อย่างปลอดภัย
+     - เมื่อ Superadmin กดเพิ่ม/ลบผู้ใช้ใน UI ระบบจะส่งคำสั่งไปยัง Supabase Cloud Database ทันที พร้อมส่งรหัสผ่านยืนยันตัวตน Superadmin เพื่อประมวลผลอย่างปลอดภัย
      - กำหนดสิทธิ์ 4 ระดับ: `superadmin`, `admin`, `executive`, `staff`
-     - **แบบฟอร์มรายงานสรุปการยืม-คืนตามมาตรฐานราชการ (แบบ พด.ยค-๐๑ v1.9.0):**
+     - **แบบฟอร์มรายงานสรุปการยืม-คืนตามมาตรฐานราชการ (แบบ พด.ยค-๐๑ v2.0.0):**
        - พิมพ์บนกระดาษ A4 แนวนอน (A4 Landscape) ด้วยฟอนต์มาตรฐาน Sarabun ไม่มีการแหว่งหรือตกขอบ (100% Zero-Clipping)
        - ตารางจัดสรรความกว้างคอลัมน์คงที่ตามสัดส่วน (Fixed Column Percentages) พร้อมตัดคำและเว้นวรรคภาษาไทยตามระเบียบสารบรรณ
        - สรุปตัวเลขสถิติ KPI (กำลังยืม, เกินกำหนด, คืนแล้ว) และข้อกำหนดตามระเบียบกระทรวงการคลังฯ พ.ศ. ๒๕๖๐ หมวด ๙
        - ช่องลงนามทางการ 3 ฝ่ายชัดเจน: ๑. ผู้ยืม, ๒. เจ้าหน้าที่, ๓. ผู้อำนวยการ
        - รองรับการสั่งพิมพ์ทันทีผ่าน Isolated Iframe และปุ่มเปิดดูตัวอย่างเอกสารเต็มหน้าในแท็บใหม่ (Open in New Tab)
      - ระบบพิมพ์ป้าย QR Code Sticker ประจำตัวอุปกรณ์ และปุ่มขอขยายเวลาการยืม (ต่ออายุ)
-     - ระบบความปลอดภัย Brute-force Login Protection (ล็อกบัญชี 5 นาทีเมื่อผิดครบ 5 ครั้ง) และ Idle Session Timeout 30 นาที
+     - ระบบความปลอดภัย Brute-force Login Protection (ล็อกบัญชี 15 นาทีเมื่อผิดครบ 5 ครั้ง) และ Idle Session Timeout 30 นาที
 
 ---
 

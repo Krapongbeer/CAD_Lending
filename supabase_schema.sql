@@ -1,7 +1,12 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v1.9.0 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.0.0 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
--- Security: Bcrypt Password Hashing, RBAC, 90-Day Audit Log Retention, Realtime Support, Supabase Direct Cloud Sync
+-- Security Hardened v2.0.0:
+--   - Re-authenticated Administrative Procedures (Superadmin Password Validation Required)
+--   - Strict Granular RLS Policies (DENY DELETE on assets & borrow_transactions for Public/Anon)
+--   - Immutable Append-Only Audit Trail (DENY UPDATE/DELETE on audit_logs)
+--   - Database-level Brute-Force Rate Limiting (login_attempts tracking & 15-min lockout)
+--   - Context-aware XSS Sanitization & Session Anti-tampering
 -- Reporting: A4 Landscape Official Government Report (พด.ยค-๐๑) with 3-Party Signatures
 -- ============================================================================
 
@@ -208,18 +213,33 @@ CREATE POLICY "Public read access on borrow_transactions"
     TO anon, authenticated 
     USING (true);
 
--- อนุญาตให้ Anon / Authenticated เขียน/อัปเดตได้ (กรณี AppSheet หรือ Web App เรียกผ่าน Key)
-CREATE POLICY "Public insert/update access on assets" 
-    ON assets FOR ALL 
+-- 🛡️ สิทธิ์การเพิ่มข้อมูล (INSERT): อนุญาตให้ Anon / Authenticated บันทึกรายการใหม่ได้
+CREATE POLICY "Public insert access on assets" 
+    ON assets FOR INSERT 
+    TO anon, authenticated 
+    WITH CHECK (true);
+
+CREATE POLICY "Public insert access on borrow_transactions" 
+    ON borrow_transactions FOR INSERT 
+    TO anon, authenticated 
+    WITH CHECK (true);
+
+-- 🛡️ สิทธิ์การแก้ไขข้อมูล (UPDATE): อนุญาตให้อัปเดตสถานะและเลขครุภัณฑ์ได้
+CREATE POLICY "Public update access on assets" 
+    ON assets FOR UPDATE 
     TO anon, authenticated 
     USING (true) 
     WITH CHECK (true);
 
-CREATE POLICY "Public insert/update access on borrow_transactions" 
-    ON borrow_transactions FOR ALL 
+CREATE POLICY "Public update access on borrow_transactions" 
+    ON borrow_transactions FOR UPDATE 
     TO anon, authenticated 
     USING (true) 
     WITH CHECK (true);
+
+-- ⛔ STRICTLY DENY DELETE (ป้องกันการสั่งลบข้อมูลผ่าน REST API):
+-- ไม่อนุญาตให้ Anon หรือ Authenticated ส่งคำขอ DELETE ตาราง assets หรือ borrow_transactions ได้เด็ดขาด
+-- เฉพาะ service_role (Admin Backend) เท่านั้นที่มีสิทธิ์ลบข้อมูลได้ (ตาม Policy ด้านบน)
 
 -- ============================================================================
 -- 9. ข้อมูลจำลองเริ่มต้น (Seed Data ตัวอย่างสำหรับการทดสอบระบบ)
@@ -321,9 +341,39 @@ SET
     email = EXCLUDED.email,
     updated_at = NOW();
 
--- 10.5 สร้าง Stored Procedure (RPC) สำหรับตรวจสอบการเข้าสู่ระบบอย่างปลอดภัย (Security Definer)
--- ฟังก์ชันนี้จะประมวลผลการคำนวณ Hash บน PostgreSQL Engine ฝั่งเซิร์ฟเวอร์เท่านั้น ไม่ส่ง Hash ออกมาภายนอก
-CREATE OR REPLACE FUNCTION authenticate_user(p_username TEXT, p_password TEXT)
+-- 10.5 ตารางบันทึกความพยายามเข้าสู่ระบบเพื่อป้องกัน Brute-Force Attack
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id BIGSERIAL PRIMARY KEY,
+    ip_address VARCHAR(50) NOT NULL DEFAULT 'unknown',
+    username VARCHAR(50) NOT NULL,
+    attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    success BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_login_attempts_lookup 
+    ON login_attempts (username, attempted_at DESC);
+
+ALTER TABLE login_attempts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Full access for service role on login_attempts" 
+    ON login_attempts FOR ALL 
+    TO service_role 
+    USING (true) 
+    WITH CHECK (true);
+
+CREATE POLICY "Public insert access on login_attempts" 
+    ON login_attempts FOR INSERT 
+    TO anon, authenticated 
+    WITH CHECK (true);
+
+-- 10.6 สร้าง Stored Procedure (RPC) สำหรับตรวจสอบการเข้าสู่ระบบอย่างปลอดภัย (Security Definer v2.0.0)
+-- มีกลไกป้องกัน Brute-Force Rate Limiting (บล็อก 15 นาทีเมื่อกรอกผิดครบ 5 ครั้ง)
+-- และป้องกัน Timing Attack บน Database Engine
+CREATE OR REPLACE FUNCTION authenticate_user(
+    p_username TEXT, 
+    p_password TEXT,
+    p_ip_address TEXT DEFAULT 'web-client'
+)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -333,14 +383,41 @@ DECLARE
     v_user RECORD;
     v_dummy_hash TEXT := '$2b$12$k0vPnjDaVEDis030i9CbouKD5XK.Hf6r2EHafCGe11Rl0vEC6wf8G';
     v_is_valid BOOLEAN := FALSE;
+    v_recent_failures INTEGER := 0;
 BEGIN
-    -- ค้นหาผู้ใช้งานตาม username แบบ Case-insensitive
+    -- 1. ตรวจสอบ Brute-Force Rate Limiting (บล็อกหากผิดเกิน 5 ครั้งใน 15 นาที)
+    SELECT COUNT(*) INTO v_recent_failures
+    FROM login_attempts
+    WHERE (LOWER(username) = LOWER(TRIM(p_username)) OR ip_address = p_ip_address)
+      AND success = FALSE
+      AND attempted_at > NOW() - INTERVAL '15 minutes';
+
+    IF v_recent_failures >= 5 THEN
+        -- บันทึกลง Audit Log เตือนภัย
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details, ip_address)
+        VALUES (
+            LOWER(TRIM(p_username)),
+            'unknown',
+            'LOGIN_LOCKED',
+            'AUTHENTICATION',
+            'RATE_LIMIT',
+            format('ระบบระงับการเข้าสู่ระบบชั่วคราว: มีการกรอกรหัสผ่านผิดเกิน %s ครั้งใน 15 นาที', v_recent_failures),
+            p_ip_address
+        );
+
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'บัญชีถูกระงับชั่วคราวเนื่องจากกรอกรหัสผ่านไม่ถูกต้องเกิน 5 ครั้ง กรุณารอ 15 นาที'
+        );
+    END IF;
+
+    -- 2. ค้นหาผู้ใช้งานตาม username แบบ Case-insensitive
     SELECT id, username, password_hash, full_name, role, department, email, is_active
     INTO v_user
     FROM system_users
     WHERE LOWER(username) = LOWER(TRIM(p_username));
 
-    -- ตรวจสอบ Bcrypt Hash บน Database Engine
+    -- 3. ตรวจสอบ Bcrypt Hash บน Database Engine
     IF FOUND AND v_user.is_active = TRUE THEN
         v_is_valid := (v_user.password_hash = crypt(p_password, v_user.password_hash));
     ELSE
@@ -349,8 +426,15 @@ BEGIN
         v_is_valid := FALSE;
     END IF;
 
-    -- ส่งเฉพาะข้อมูล User ที่ปลอดภัยกลับออกไป (ไม่ส่ง password_hash หลุดออกไปเด็ดขาด)
+    -- 4. บันทึกผลการพยายามเข้าสู่ระบบลง login_attempts
+    INSERT INTO login_attempts (ip_address, username, attempted_at, success)
+    VALUES (p_ip_address, LOWER(TRIM(p_username)), NOW(), v_is_valid);
+
+    -- 5. ส่งเฉพาะข้อมูล User ที่ปลอดภัยกลับออกไป (ไม่ส่ง password_hash หลุดออกไปเด็ดขาด)
     IF v_is_valid THEN
+        -- เคลียร์ประวัติความล้มเหลวเก่าเมื่อสำเร็จ
+        DELETE FROM login_attempts WHERE LOWER(username) = LOWER(TRIM(p_username)) AND success = FALSE;
+
         RETURN jsonb_build_object(
             'success', true,
             'user', jsonb_build_object(
@@ -371,11 +455,20 @@ BEGIN
 END;
 $$;
 
--- ให้สิทธิ์ Anon และ Authenticated เรียกใช้ RPC Function นี้ได้
+-- ฟังก์ชัน Overload สำหรับรองรับคำขอเดิม 2 พารามิเตอร์
+CREATE OR REPLACE FUNCTION authenticate_user(p_username TEXT, p_password TEXT)
+RETURNS JSONB
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+    SELECT authenticate_user(p_username, p_password, 'web-client');
+$$;
+
+GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT) TO anon, authenticated;
 
 -- ============================================================================
--- 11. 📜 Enterprise Audit Logging System (90-Day Retention Policy)
+-- 11. 📜 Enterprise Audit Logging System (90-Day Retention Policy & Append-Only)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -399,11 +492,23 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 -- เปิด RLS สำหรับ Audit Logs
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
--- อนุญาตให้อ่านและบันทึกข้อมูลผ่าน Web Application ได้
-CREATE POLICY "Public read and insert on audit_logs"
-    ON audit_logs FOR ALL
+-- 🛡️ STRICT APPEND-ONLY AUDIT TRAIL (มาตรฐาน ISO/IEC 27001):
+-- อนุญาตให้ดูประวัติ (SELECT) และเพิ่มประวัติใหม่ได้เท่านั้น (INSERT)
+-- ไม่อนุญาตให้ UPDATE หรือ DELETE ประวัติเดิมเด็ดขาดเพื่อป้องกันการทำลายหลักฐาน
+CREATE POLICY "Public read access on audit_logs"
+    ON audit_logs FOR SELECT
     TO anon, authenticated
-    USING (true)
+    USING (true);
+
+CREATE POLICY "Public insert access on audit_logs"
+    ON audit_logs FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
+
+CREATE POLICY "Full access for service role on audit_logs" 
+    ON audit_logs FOR ALL 
+    TO service_role 
+    USING (true) 
     WITH CHECK (true);
 
 -- นโยบายและฟังก์ชันล้างประวัติที่เก่ากว่า 90 วันอัตโนมัติ (90-Day Auto Retention Cleaner)
@@ -422,7 +527,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION purge_audit_logs_older_than_90_days() TO anon, authenticated;
 
 -- ============================================================================
--- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v1.9.0)
+-- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v2.0.0)
 -- ============================================================================
 
 -- 12.1 ดึงรายชื่อผู้ใช้งานอย่างปลอดภัย (ไม่ส่ง password_hash หลุดออกสู่ภายนอก)
@@ -454,9 +559,10 @@ FROM system_users;
 
 GRANT SELECT ON view_system_users TO anon, authenticated;
 
--- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin)
+-- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.0.0)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_admin_username TEXT,
+    p_admin_password TEXT,
     p_new_username TEXT,
     p_password TEXT,
     p_full_name TEXT,
@@ -466,30 +572,47 @@ CREATE OR REPLACE FUNCTION admin_create_user(
 )
 RETURNS JSONB AS $$
 DECLARE
-    v_admin_role VARCHAR(20);
+    v_admin RECORD;
     v_clean_user TEXT;
     v_clean_role TEXT;
 BEGIN
     v_clean_user := LOWER(TRIM(p_new_username));
     v_clean_role := LOWER(TRIM(p_role));
 
-    -- ตรวจสอบบทบาท
+    -- 1. ตรวจสอบบทบาท
     IF v_clean_role NOT IN ('superadmin', 'admin', 'staff', 'executive') THEN
         RETURN jsonb_build_object('success', false, 'message', 'บทบาทไม่ถูกต้อง (ต้องเป็น superadmin, admin, staff, หรือ executive)');
     END IF;
 
-    -- ตรวจสอบสิทธิ์ว่าผู้เรียกเป็น superadmin หรือไม่
-    SELECT role INTO v_admin_role FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_admin_username)) AND is_active = true;
-    IF (v_admin_role IS NULL OR v_admin_role != 'superadmin') AND LOWER(TRIM(p_admin_username)) != 'superadmin' THEN
-        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้นที่สามารถเพิ่มผู้ใช้ได้');
+    -- 2. ยืนยันตัวตน Superadmin ด้วยรหัสผ่านจริง (Re-authentication)
+    SELECT id, username, password_hash, role, is_active
+    INTO v_admin
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_admin_username));
+
+    IF NOT FOUND OR v_admin.is_active = FALSE OR v_admin.role != 'superadmin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
     END IF;
 
-    -- ตรวจสอบว่าชื่อผู้ใช้ซ้ำหรือไม่
+    IF p_admin_password IS NULL OR TRIM(p_admin_password) = '' OR v_admin.password_hash != crypt(p_admin_password, v_admin.password_hash) THEN
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+        VALUES (
+            COALESCE(p_admin_username, 'unknown'),
+            'attacker',
+            'SECURITY_ALERT',
+            'USER_MGMT',
+            'UNAUTHORIZED_ATTEMPT',
+            format('พยายามสร้างผู้ใช้ %s โดยไม่ใส่รหัสผ่าน Superadmin ที่ถูกต้อง (Authorization Failed)', v_clean_user)
+        );
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง');
+    END IF;
+
+    -- 3. ตรวจสอบว่าชื่อผู้ใช้ซ้ำหรือไม่
     IF EXISTS (SELECT 1 FROM system_users WHERE LOWER(username) = v_clean_user) THEN
         RETURN jsonb_build_object('success', false, 'message', format('ชื่อผู้ใช้งาน "%s" มีอยู่ในระบบแล้ว', v_clean_user));
     END IF;
 
-    -- สร้างผู้ใช้ใหม่
+    -- 4. สร้างผู้ใช้ใหม่
     INSERT INTO system_users (username, password_hash, full_name, role, department, email, is_active)
     VALUES (
         v_clean_user,
@@ -501,10 +624,10 @@ BEGIN
         true
     );
 
-    -- บันทึกลง Audit Log ทันที
+    -- 5. บันทึกลง Audit Log ทันที
     INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
     VALUES (
-        p_admin_username,
+        v_admin.username,
         'superadmin',
         'USER_MANAGEMENT',
         'USER',
@@ -516,16 +639,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin และห้ามลบ superadmin ตัวเอง)
+-- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.0.0)
 CREATE OR REPLACE FUNCTION admin_delete_user(
     p_admin_username TEXT,
+    p_admin_password TEXT,
     p_target_username TEXT
 )
 RETURNS JSONB AS $$
 DECLARE
-    v_admin_role VARCHAR(20);
+    v_admin RECORD;
     v_clean_target TEXT;
 BEGIN
     v_clean_target := LOWER(TRIM(p_target_username));
@@ -534,16 +658,34 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'ไม่อนุญาตให้ลบบัญชี Superadmin หลัก');
     END IF;
 
-    SELECT role INTO v_admin_role FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_admin_username)) AND is_active = true;
-    IF (v_admin_role IS NULL OR v_admin_role != 'superadmin') AND LOWER(TRIM(p_admin_username)) != 'superadmin' THEN
+    -- ยืนยันตัวตน Superadmin ด้วยรหัสผ่านจริง
+    SELECT id, username, password_hash, role, is_active
+    INTO v_admin
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_admin_username));
+
+    IF NOT FOUND OR v_admin.is_active = FALSE OR v_admin.role != 'superadmin' THEN
         RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
+    END IF;
+
+    IF p_admin_password IS NULL OR TRIM(p_admin_password) = '' OR v_admin.password_hash != crypt(p_admin_password, v_admin.password_hash) THEN
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+        VALUES (
+            COALESCE(p_admin_username, 'unknown'),
+            'attacker',
+            'SECURITY_ALERT',
+            'USER_MGMT',
+            'UNAUTHORIZED_ATTEMPT',
+            format('พยายามลบผู้ใช้ %s โดยไม่ใส่รหัสผ่าน Superadmin ที่ถูกต้อง (Authorization Failed)', v_clean_target)
+        );
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง');
     END IF;
 
     DELETE FROM system_users WHERE LOWER(username) = v_clean_target;
 
     INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
     VALUES (
-        p_admin_username,
+        v_admin.username,
         'superadmin',
         'USER_MANAGEMENT',
         'USER',
@@ -555,17 +697,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended)
+-- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended พร้อมยืนยันรหัสผ่าน v2.0.0)
 CREATE OR REPLACE FUNCTION admin_toggle_user_status(
     p_admin_username TEXT,
+    p_admin_password TEXT,
     p_target_username TEXT,
     p_is_active BOOLEAN
 )
 RETURNS JSONB AS $$
 DECLARE
-    v_admin_role VARCHAR(20);
+    v_admin RECORD;
     v_clean_target TEXT;
 BEGIN
     v_clean_target := LOWER(TRIM(p_target_username));
@@ -574,9 +717,27 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'ไม่อนุญาตให้ระงับบัญชี Superadmin หลัก');
     END IF;
 
-    SELECT role INTO v_admin_role FROM system_users WHERE LOWER(username) = LOWER(TRIM(p_admin_username)) AND is_active = true;
-    IF (v_admin_role IS NULL OR v_admin_role != 'superadmin') AND LOWER(TRIM(p_admin_username)) != 'superadmin' THEN
+    -- ยืนยันตัวตน Superadmin ด้วยรหัสผ่านจริง
+    SELECT id, username, password_hash, role, is_active
+    INTO v_admin
+    FROM system_users
+    WHERE LOWER(username) = LOWER(TRIM(p_admin_username));
+
+    IF NOT FOUND OR v_admin.is_active = FALSE OR v_admin.role != 'superadmin' THEN
         RETURN jsonb_build_object('success', false, 'message', 'Permission denied: เฉพาะ Superadmin เท่านั้น');
+    END IF;
+
+    IF p_admin_password IS NULL OR TRIM(p_admin_password) = '' OR v_admin.password_hash != crypt(p_admin_password, v_admin.password_hash) THEN
+        INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
+        VALUES (
+            COALESCE(p_admin_username, 'unknown'),
+            'attacker',
+            'SECURITY_ALERT',
+            'USER_MGMT',
+            'UNAUTHORIZED_ATTEMPT',
+            format('พยายามเปลี่ยนสถานะผู้ใช้ %s โดยไม่ใส่รหัสผ่าน Superadmin ที่ถูกต้อง (Authorization Failed)', v_clean_target)
+        );
+        RETURN jsonb_build_object('success', false, 'message', 'Permission denied: รหัสผ่านยืนยันสิทธิ์ Superadmin ไม่ถูกต้อง');
     END IF;
 
     UPDATE system_users 
@@ -585,7 +746,7 @@ BEGIN
 
     INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
     VALUES (
-        p_admin_username,
+        v_admin.username,
         'superadmin',
         'USER_MANAGEMENT',
         'USER',
@@ -597,12 +758,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, BOOLEAN) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v1.9.0)
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.0.0)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v1.9.0', 'ระบบ SmartCAD-Lending v1.9.0 ปรับปรุงระบบออกรายงานมาตรฐานราชการแบบ พด.ยค-๐๑ (A4 แนวนอน ไม่แหว่ง ลายเซ็น 3 ฝ่าย) พร้อม User Management Bcrypt 100%'),
-    ('superadmin', 'superadmin', 'SCHEMA_MIGRATION', 'SECURITY', 'system_users', 'ติดตั้งระบบพิสูจน์ตัวตน Bcrypt, RBAC, Stored Procedures admin_create_user/admin_list_users สำเร็จ');
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.0.0', 'ระบบ SmartCAD-Lending v2.0.0 อัปเกรดยกระดับความปลอดภัยขั้นสูงสุด: ปิดการลบ RLS บน assets/transactions, บังคับ Append-Only บน audit_logs, ตรวจสอบรหัสผ่าน Superadmin ทุกคำสั่งบริหาร และป้องกัน Brute-Force Rate Limiting'),
+    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.0.0', 'เปิดใช้งานระบบยืนยันสิทธิ์ Re-authentication รหัสผ่าน Superadmin และบล็อกการลบฐานข้อมูลสำหรับบุคคลภายนอก 100%');
 
 
