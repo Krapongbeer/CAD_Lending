@@ -24,7 +24,7 @@ function doGet(e) {
   if (action === 'ping') {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'ok',
-      message: 'GAS Web App is active (v2.1.0 Secured & Keep-Alive)',
+      message: 'GAS Web App is active (v2.1.1 Secured & Keep-Alive)',
       timestamp: new Date().toISOString()
     })).setMimeType(ContentService.MimeType.JSON);
   }

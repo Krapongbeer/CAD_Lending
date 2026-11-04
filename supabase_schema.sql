@@ -1,7 +1,7 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.1.0 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.1.1 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
--- Security Hardened v2.1.0:
+-- Security Hardened v2.1.1:
 --   - Re-authenticated Administrative Procedures (Superadmin Password Validation Required)
 --   - Strict Granular RLS Policies (DENY DELETE on assets & borrow_transactions for Public/Anon)
 --   - Immutable Append-Only Audit Trail (DENY UPDATE/DELETE on audit_logs)
@@ -367,7 +367,7 @@ CREATE POLICY "Public insert access on login_attempts"
     TO anon, authenticated 
     WITH CHECK (true);
 
--- 10.6 สร้าง Stored Procedure (RPC) สำหรับตรวจสอบการเข้าสู่ระบบอย่างปลอดภัย (Security Definer v2.1.0)
+-- 10.6 สร้าง Stored Procedure (RPC) สำหรับตรวจสอบการเข้าสู่ระบบอย่างปลอดภัย (Security Definer v2.1.1)
 -- มีกลไกป้องกัน Brute-Force Rate Limiting (บล็อก 15 นาทีเมื่อกรอกผิดครบ 5 ครั้ง)
 -- และป้องกัน Timing Attack บน Database Engine
 CREATE OR REPLACE FUNCTION authenticate_user(
@@ -528,7 +528,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION purge_audit_logs_older_than_90_days() TO anon, authenticated;
 
 -- ============================================================================
--- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v2.1.0)
+-- 12. 🛡️ User Management Procedures (Admin Add/Delete/List/Toggle System Users v2.1.1)
 -- ============================================================================
 
 -- 12.1 ดึงรายชื่อผู้ใช้งานอย่างปลอดภัย (ไม่ส่ง password_hash หลุดออกสู่ภายนอก)
@@ -560,7 +560,7 @@ FROM system_users;
 
 GRANT SELECT ON view_system_users TO anon, authenticated;
 
--- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.1.0)
+-- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.1.1)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_admin_username TEXT,
     p_admin_password TEXT,
@@ -642,7 +642,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.1.0)
+-- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.1.1)
 CREATE OR REPLACE FUNCTION admin_delete_user(
     p_admin_username TEXT,
     p_admin_password TEXT,
@@ -700,7 +700,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended พร้อมยืนยันรหัสผ่าน v2.1.0)
+-- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended พร้อมยืนยันรหัสผ่าน v2.1.1)
 CREATE OR REPLACE FUNCTION admin_toggle_user_status(
     p_admin_username TEXT,
     p_admin_password TEXT,
@@ -761,10 +761,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.1.0)
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.1.1)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.1.0', 'ระบบ SmartCAD-Lending v2.1.0 อัปเกรดยกระดับความปลอดภัยขั้นสูงสุด: ปิดการลบ RLS บน assets/transactions, บังคับ Append-Only บน audit_logs, ตรวจสอบรหัสผ่าน Superadmin ทุกคำสั่งบริหาร, ป้องกัน Brute-Force Rate Limiting และระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ'),
-    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.1.0', 'เปิดใช้งานระบบยืนยันสิทธิ์ Re-authentication รหัสผ่าน Superadmin และบล็อกการลบฐานข้อมูลสำหรับบุคคลภายนอก 100%');
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.1.1', 'ระบบ SmartCAD-Lending v2.1.1 อัปเกรดยกระดับความปลอดภัยขั้นสูงสุด: ปิดการลบ RLS บน assets/transactions, บังคับ Append-Only บน audit_logs, ตรวจสอบรหัสผ่าน Superadmin ทุกคำสั่งบริหาร, ป้องกัน Brute-Force Rate Limiting และระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ'),
+    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.1.1', 'เปิดใช้งานระบบยืนยันสิทธิ์ Re-authentication รหัสผ่าน Superadmin และบล็อกการลบฐานข้อมูลสำหรับบุคคลภายนอก 100%');
 
 

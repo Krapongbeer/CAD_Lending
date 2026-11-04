@@ -16,7 +16,7 @@
    - สร้างตาราง `assets` และ `borrow_transactions` พร้อม Index & Constraint ครบถ้วน
    - สร้าง Trigger สำหรับ Auto-Sync สถานะยืม-คืนอัตโนมัติ
    - สร้าง View สรุปข้อมูลสำหรับหน้า Dashboard และ View สำหรับส่งต่อ (Handoff) ไปยัง CAD-Inventory
-   - **🛡️ Enterprise Security & Authentication (สถาปัตยกรรมความปลอดภัยระดับองค์กร v2.1.0 Hardened):**
+   - **🛡️ Enterprise Security & Authentication (สถาปัตยกรรมความปลอดภัยระดับองค์กร v2.1.1 Hardened):**
      - เปิดใช้งาน Extension `pgcrypto` สำหรับคำนวณ Bcrypt Hash บน Database Engine
      - สร้างตาราง `system_users` พร้อม Row Level Security (RLS) บล็อกการอ่านและแก้ไขจาก Public 100%
      - **Superadmin Re-authentication**: Stored Procedures สำหรับจัดการระบบ (`admin_create_user`, `admin_delete_user`, `admin_toggle_user_status`) บังคับตรวจสอบรหัสผ่านจริงของ Superadmin ทุกครั้ง ป้องกันการปลอมแปลงสิทธิ์ (Authorization Bypass)
@@ -30,12 +30,12 @@
      - สร้างตาราง `audit_logs` พร้อม RLS และ Index ความเร็วสูงสำหรับจัดเก็บบันทึกประวัติ (Audit Trail)
      - นโยบายจัดเก็บและตรวจสอบประวัติย้อนหลัง 90 วัน พร้อมฟังก์ชัน Auto-Purge (`purge_audit_logs_older_than_90_days`)
      - บันทึกทุกกิจกรรม: เข้าสู่ระบบ, ออกจากระบบ, ล็อกอินผิดพลาด/ถูกล็อก, จัดการผู้ใช้ (เพิ่ม/ลบ/เปลี่ยนสถานะ), ค้นหาข้อมูล, ส่งออก CAD Excel, พิมพ์รายงานราชการ, ซิงก์ข้อมูล, และเหตุการณ์ผิดปกติด้านความปลอดภัย (SECURITY_ALERT)
-   - **👥 ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (User Management & Supabase Direct Cloud Sync v2.1.0):**
+   - **👥 ระบบจัดการผู้ใช้งานและสิทธิ์การเข้าถึง (User Management & Supabase Direct Cloud Sync v2.1.1):**
      - Stored Procedures ระดับความปลอดภัยสูง: `admin_create_user`, `admin_delete_user`, `admin_list_users`, `admin_toggle_user_status`
      - Public Safe View `view_system_users` ป้องกันการรั่วไหลของรหัสผ่านหรือ hash 100%
      - เมื่อ Superadmin กดเพิ่ม/ลบผู้ใช้ใน UI ระบบจะส่งคำสั่งไปยัง Supabase Cloud Database ทันที พร้อมส่งรหัสผ่านยืนยันตัวตน Superadmin เพื่อประมวลผลอย่างปลอดภัย
      - กำหนดสิทธิ์ 4 ระดับ: `superadmin`, `admin`, `executive`, `staff`
-     - **แบบฟอร์มรายงานสรุปการยืม-คืนตามมาตรฐานราชการ (A4 แนวนอน v2.1.0):**
+     - **แบบฟอร์มรายงานสรุปการยืม-คืนตามมาตรฐานราชการ (A4 แนวนอน v2.1.1):**
        - พิมพ์บนกระดาษ A4 แนวนอน (A4 Landscape) ด้วยฟอนต์มาตรฐาน Sarabun ไม่มีการแหว่งหรือตกขอบ (100% Zero-Clipping)
        - ตารางจัดสรรความกว้างคอลัมน์คงที่ตามสัดส่วน (Fixed Column Percentages) พร้อมตัดคำและเว้นวรรคภาษาไทยตามระเบียบสารบรรณ
        - สรุปตัวเลขสถิติ KPI (กำลังยืม, เกินกำหนด, คืนแล้ว) และข้อกำหนดตามระเบียบกระทรวงการคลังฯ พ.ศ. ๒๕๖๐ หมวด ๙

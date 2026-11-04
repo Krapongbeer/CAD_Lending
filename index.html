@@ -212,7 +212,6 @@
             <div>
                 <h1 class="text-base sm:text-lg font-black text-slate-950 dark:text-white tracking-tight flex items-center gap-1.5 font-display">
                     <span class="bg-gradient-to-r from-slate-950 via-cmu-900 to-cmu-700 dark:from-white dark:via-cmu-200 dark:to-cmugold-300 bg-clip-text text-transparent">SmartCAD-Lending</span>
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-gradient-to-r from-cmu-600 via-cmu-700 to-cmu-800 text-white font-mono shadow-2xs">Cloud Hub</span>
                 </h1>
                 <p class="text-[11px] text-cmu-800 dark:text-cmu-300 font-bold hidden sm:block">ระบบยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ • กองบริหารงานกลาง มช.</p>
             </div>
@@ -298,7 +297,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.1.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.1.1</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -332,13 +331,6 @@
                     <i data-lucide="log-in" class="w-4 h-4 text-cmugold-300"></i>
                     <span>เข้าสู่ระบบ (Login)</span>
                 </button>
-
-                <div class="pt-2 text-center text-[11px] text-slate-400 dark:text-slate-500 select-none">
-                    <span>บัญชีผู้ดูแลระบบเริ่มต้น: </span>
-                    <span class="font-mono font-bold text-cmu-600 dark:text-cmu-400">superadmin</span>
-                    <span class="text-slate-300 dark:text-slate-600"> / </span>
-                    <span class="font-mono font-bold text-slate-600 dark:text-slate-300">superadmin1234</span>
-                </div>
             </form>
         </div>
     </div>
@@ -444,7 +436,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.1.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.1.1</span>
                 </div>
             </div>
         </aside>
@@ -1147,7 +1139,7 @@
                     <input type="email" id="newEmail" placeholder="เช่น officer@cmu.ac.th" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkslate-800 border border-slate-200 dark:border-darkslate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs">
                 </div>
 
-                <!-- 🛡️ Superadmin Re-authentication Password Field (Security v2.1.0) -->
+                <!-- 🛡️ Superadmin Re-authentication Password Field (Security v2.1.1) -->
                 <div class="p-3 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 space-y-1">
                     <label class="block font-bold text-[11px] flex items-center gap-1.5">
                         <i data-lucide="shield-check" class="w-4 h-4 text-amber-600"></i>
@@ -1284,7 +1276,7 @@
             return API_HEADERS;
         }
 
-        // 🛡️ Context-Aware HTML Escaping Utility for XSS Prevention (Security v2.1.0)
+        // 🛡️ Context-Aware HTML Escaping Utility for XSS Prevention (Security v2.1.1)
         function escapeHtml(str) {
             if (str === null || str === undefined) return '';
             return String(str)
@@ -1295,7 +1287,7 @@
                 .replace(/'/g, '&#39;');
         }
 
-        // 🛡️ CSV / Excel Formula Injection Prevention (CWE-1236 v2.1.0)
+        // 🛡️ CSV / Excel Formula Injection Prevention (CWE-1236 v2.1.1)
         function sanitizeExcelVal(val) {
             if (val === null || val === undefined) return '';
             if (typeof val === 'string' && /^[=+\-@\t\r]/.test(val)) {
@@ -1773,7 +1765,7 @@
             renderBorrowingsTable(cacheBorrowings);
         }
 
-        // Render Borrowings Table (Sanitized against XSS v2.1.0)
+        // Render Borrowings Table (Sanitized against XSS v2.1.1)
         function renderBorrowingsTable(list) {
             const tbody = document.getElementById('tbodyBorrowings');
             if (list.length === 0) {
@@ -1830,7 +1822,7 @@
             lucide.createIcons();
         }
 
-        // Render Assets Table (Sanitized against XSS v2.1.0)
+        // Render Assets Table (Sanitized against XSS v2.1.1)
         function renderAssetsTable(list) {
             const tbody = document.getElementById('tbodyAssets');
             if (list.length === 0) {
@@ -1872,7 +1864,7 @@
             }).join('');
         }
 
-        // Render CAD Handoff Table (Sanitized against XSS v2.1.0)
+        // Render CAD Handoff Table (Sanitized against XSS v2.1.1)
         function renderHandoffTable(list) {
             const tbody = document.getElementById('tbodyHandoff');
             if (list.length === 0) {
@@ -2687,7 +2679,7 @@
 
         <!-- Document Footer -->
         <div class="doc-footer">
-            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.1.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.1.1) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
             <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
         </div>
     </div>
@@ -2913,8 +2905,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v2.1.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.1.0 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับอัตโนมัติ (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
+                        target_id: "v2.1.1",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.1.1 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับอัตโนมัติ (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -3099,7 +3091,7 @@
         }
 
         // ==========================================
-        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE DIRECT CLOUD SYNC v2.1.0)
+        // 6.1 USER MANAGEMENT & RBAC SYSTEM (SUPERADMIN & SUPABASE DIRECT CLOUD SYNC v2.1.1)
         // ==========================================
 
         async function loadSystemUsers() {
@@ -3348,7 +3340,7 @@
             const passwordHash = hashPasswordBcrypt(p) || `$2a$10$localHash_${btoa(p)}`;
             let syncedToSupabase = false;
 
-            // 1. Try Supabase RPC admin_create_user (Hardened v2.1.0 with Superadmin Re-authentication)
+            // 1. Try Supabase RPC admin_create_user (Hardened v2.1.1 with Superadmin Re-authentication)
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_create_user`, {
                     method: "POST",
@@ -3454,7 +3446,7 @@
                 return;
             }
 
-            // 🔒 Superadmin Password Re-authentication (Security v2.1.0)
+            // 🔒 Superadmin Password Re-authentication (Security v2.1.1)
             const adminPass = prompt(`🔒 ยืนยันสิทธิ์ความปลอดภัย Superadmin:\nกรุณากรอกรหัสผ่าน Superadmin ของคุณเพื่อยืนยันการลบผู้ใช้ "${targetUsername}":`);
             if (!adminPass) {
                 return;
@@ -3509,7 +3501,7 @@
             }
 
             const actionText = newStatus ? "เปิดใช้งาน" : "ระงับชั่วคราว";
-            // 🔒 Superadmin Password Re-authentication (Security v2.1.0)
+            // 🔒 Superadmin Password Re-authentication (Security v2.1.1)
             const adminPass = prompt(`🔒 ยืนยันสิทธิ์ความปลอดภัย Superadmin:\nกรุณากรอกรหัสผ่าน Superadmin ของคุณเพื่อยืนยันการ${actionText}บัญชี "${targetUsername}":`);
             if (!adminPass) {
                 return;
@@ -3565,7 +3557,7 @@
 
         function copySupabaseUserSql() {
             const sql = `-- ============================================================
--- 🚀 SmartCAD-Lending User Management & RBAC Stored Procedures v2.1.0
+-- 🚀 SmartCAD-Lending User Management & RBAC Stored Procedures v2.1.1
 -- กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่
 -- คัดลอกโค้ดนี้ไปวางและกด Run ที่ Supabase SQL Editor
 -- ============================================================
@@ -3594,7 +3586,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_list_users(TEXT) TO anon, authenticated;
 
--- 2. ฟังก์ชันเพิ่มผู้ใช้งานพร้อม Re-authentication รหัสผ่าน Superadmin (v2.1.0)
+-- 2. ฟังก์ชันเพิ่มผู้ใช้งานพร้อม Re-authentication รหัสผ่าน Superadmin (v2.1.1)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_admin_username TEXT,
     p_admin_password TEXT,
@@ -3672,7 +3664,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 3. ฟังก์ชันลบผู้ใช้งานพร้อม Re-authentication รหัสผ่าน Superadmin (v2.1.0)
+-- 3. ฟังก์ชันลบผู้ใช้งานพร้อม Re-authentication รหัสผ่าน Superadmin (v2.1.1)
 CREATE OR REPLACE FUNCTION admin_delete_user(
     p_admin_username TEXT,
     p_admin_password TEXT,
@@ -3729,7 +3721,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 4. ฟังก์ชันเปิด/ระงับบัญชีผู้ใช้พร้อม Re-authentication รหัสผ่าน Superadmin (v2.1.0)
+-- 4. ฟังก์ชันเปิด/ระงับบัญชีผู้ใช้พร้อม Re-authentication รหัสผ่าน Superadmin (v2.1.1)
 CREATE OR REPLACE FUNCTION admin_toggle_user_status(
     p_admin_username TEXT,
     p_admin_password TEXT,
