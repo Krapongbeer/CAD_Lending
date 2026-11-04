@@ -321,11 +321,28 @@ function onOpen() {
     .addItem('📋 ซิงก์เฉพาะตาราง Transactions', 'syncTransactionsToSupabase')
     .addSeparator()
     .addItem('🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase', 'repairAndSyncImagesToSupabase')
+    .addItem('🔑 ขอสิทธิ์เข้าถึง Google Drive (Authorization Setup)', 'authorizeDriveAccess')
     .addSeparator()
     .addItem('⏰ ติดตั้งระบบป้องกัน Supabase หลับ (Keep-Alive ทุก 2 วัน)', 'installKeepAliveTrigger')
     .addItem('⚡ ทดสอบ Ping Supabase ทันที', 'testKeepAliveNow')
     .addItem('⏹️ ปิดระบบป้องกัน Supabase หลับ', 'removeKeepAliveTrigger')
     .addToUi();
+}
+
+/**
+ * 🔑 ฟังก์ชันสำหรับขอและยืนยันสิทธิ์ Google Drive ครั้งแรก (Run 1 ครั้ง)
+ * เมื่อกดเรียกใช้ Google จะแสดงหน้าต่าง "จำเป็นต้องมีสิทธิ์ (Authorization Required)"
+ * ให้กดยอมรับสิทธิ์เพื่อให้ระบบสามารถอ่านไฟล์ภาพและปรับสิทธิ์สาธารณะได้
+ */
+function authorizeDriveAccess() {
+  const root = DriveApp.getRootFolder();
+  Logger.log("✅ ยืนยันสิทธิ์ Google Drive สำเร็จ: บัญชีของคุณสามารถเข้าถึง Drive ได้ปกติ (" + root.getName() + ")");
+  const ui = SpreadsheetApp.getUi();
+  ui.alert(
+    '🔑 ยืนยันสิทธิ์ Google Drive สำเร็จ!',
+    'ระบบได้รับสิทธิ์เข้าถึง Google Drive เรียบร้อยแล้ว\n\nขณะนี้คุณสามารถกดซ่อมแซมรูปภาพผ่านเมนู "🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase" ได้ทันทีโดยไม่ติด Error',
+    ui.ButtonSet.OK
+  );
 }
 
 /**
