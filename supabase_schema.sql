@@ -1,13 +1,14 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.1.1 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.2.0 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
--- Security Hardened v2.1.1:
+-- Security Hardened v2.2.0:
 --   - Re-authenticated Administrative Procedures (Superadmin Password Validation Required)
 --   - Strict Granular RLS Policies (DENY DELETE on assets & borrow_transactions for Public/Anon)
 --   - Immutable Append-Only Audit Trail (DENY UPDATE/DELETE on audit_logs)
 --   - Database-level Brute-Force Rate Limiting (login_attempts tracking & 15-min lockout)
 --   - Context-aware XSS Sanitization & Session Anti-tampering
 --   - Dual-Layer Keep-Alive Engine (GAS + GitHub Actions to prevent 7-day inactivity pause)
+--   - Auto Drive Image Resolver (AppSheet Relative Image Paths to Direct CDN URLs)
 -- Reporting: A4 Landscape Official Government Report with 3-Party Signatures
 -- ============================================================================
 
@@ -761,10 +762,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.1.1)
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.2.0)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.1.1', 'ระบบ SmartCAD-Lending v2.1.1 อัปเกรดยกระดับความปลอดภัยขั้นสูงสุด: ปิดการลบ RLS บน assets/transactions, บังคับ Append-Only บน audit_logs, ตรวจสอบรหัสผ่าน Superadmin ทุกคำสั่งบริหาร, ป้องกัน Brute-Force Rate Limiting และระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ'),
-    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.1.1', 'เปิดใช้งานระบบยืนยันสิทธิ์ Re-authentication รหัสผ่าน Superadmin และบล็อกการลบฐานข้อมูลสำหรับบุคคลภายนอก 100%');
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.2.0', 'ระบบ SmartCAD-Lending v2.2.0 อัปเกรดระบบ Auto Drive Image Resolver เชื่อมต่อ AppSheet Google Drive CDN และระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ'),
+    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.2.0', 'เปิดใช้งานระบบยืนยันสิทธิ์ Re-authentication รหัสผ่าน Superadmin และบล็อกการลบฐานข้อมูลสำหรับบุคคลภายนอก 100%');
 
 

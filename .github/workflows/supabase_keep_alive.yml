@@ -18,7 +18,7 @@ jobs:
             -X GET "https://undafgcijvuhvdmyjatk.supabase.co/rest/v1/assets?select=asset_id&limit=1" \
             -H "apikey: sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn" \
             -H "Authorization: Bearer sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn" \
-            -H "User-Agent: GitHub-Actions-SmartCAD-KeepAlive/2.1.1")
+            -H "User-Agent: GitHub-Actions-SmartCAD-KeepAlive/2.2.0")
           
           echo "📡 HTTP Response Code: $STATUS_CODE"
           

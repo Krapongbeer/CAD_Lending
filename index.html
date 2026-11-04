@@ -297,7 +297,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.1.1</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.2.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -436,7 +436,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.1.1</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.2.0</span>
                 </div>
             </div>
         </aside>
@@ -1061,28 +1061,57 @@
         </main>
     </div>
 
-    <!-- MODAL FOR EVIDENCE VIEWER (PHOTO / SIGNATURE) -->
+    <!-- MODAL FOR EVIDENCE VIEWER (PHOTO / SIGNATURE v2.2.0) -->
     <div id="modalEvidence" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div class="apple-liquid-glass rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-white/20 dark:border-darkslate-700 bg-white dark:bg-darkslate-900">
+        <div class="apple-liquid-glass rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-white/20 dark:border-darkslate-700 bg-white dark:bg-darkslate-900 animate-in fade-in zoom-in-95 duration-150">
             <div class="flex items-center justify-between">
                 <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2" id="modalTitle">
                     <i data-lucide="image" class="w-5 h-5 text-cmu-600"></i>
                     <span>หลักฐานการส่งมอบอุปกรณ์</span>
                 </h3>
-                <button onclick="closeEvidenceModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-xl transition">
+                <button onclick="closeEvidenceModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-xl transition" title="ปิด">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
             <div class="space-y-3">
-                <div class="w-full h-72 rounded-2xl border border-slate-200 dark:border-darkslate-800 bg-slate-100 dark:bg-darkslate-950 flex items-center justify-center overflow-hidden">
-                    <img id="modalImg" src="" alt="Evidence" class="max-w-full max-h-full object-contain">
+                <div class="w-full h-80 rounded-2xl border border-slate-200 dark:border-darkslate-800 bg-slate-100 dark:bg-darkslate-950 flex items-center justify-center overflow-hidden relative" id="modalImgContainer">
+                    <!-- Loading state -->
+                    <div id="modalImgLoading" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-100/90 dark:bg-darkslate-950/90 text-slate-400 text-xs gap-2 z-10">
+                        <i data-lucide="loader-2" class="w-7 h-7 animate-spin text-cmu-600"></i>
+                        <span class="font-bold text-slate-600 dark:text-slate-300">กำลังโหลดรูปภาพ...</span>
+                    </div>
+
+                    <!-- Error state -->
+                    <div id="modalImgError" class="hidden absolute inset-0 p-6 flex flex-col items-center justify-center bg-slate-50 dark:bg-darkslate-950 text-center gap-3 z-10">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800 dark:text-slate-100">ยังไม่ได้รับการแปลงเป็นลิงก์สาธารณะ</p>
+                            <p class="text-[12px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm leading-relaxed" id="modalImgErrorDetail">
+                                รูปภาพนี้ถูกบันทึกเป็น Relative Path จาก AppSheet
+                            </p>
+                        </div>
+                        <div class="pt-1">
+                            <span class="inline-block px-3 py-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-950/40 text-cmu-700 dark:text-cmu-300 text-[11px] font-bold border border-cmu-200 dark:border-cmu-800">
+                                💡 กดเมนู "ซ่อมแซมลิงก์รูปภาพ" ใน Google Sheets เพื่ออัปเดตถาวร
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Main Image Element -->
+                    <img id="modalImg" src="" alt="Evidence" class="max-w-full max-h-full object-contain transition duration-200" onload="onEvidenceLoaded()" onerror="onEvidenceError()">
                 </div>
                 <p id="modalDesc" class="text-xs text-slate-500 dark:text-slate-400 text-center font-medium"></p>
             </div>
 
-            <div class="pt-2">
-                <button onclick="closeEvidenceModal()" class="w-full py-2.5 bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-darkslate-700 transition">
+            <div class="flex gap-2 pt-2">
+                <a id="modalOpenFullBtn" href="#" target="_blank" class="hidden flex-1 py-2.5 bg-slate-100 dark:bg-darkslate-800 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-darkslate-700 transition text-center inline-flex items-center justify-center gap-1.5">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                    <span>เปิดภาพขนาดเต็ม</span>
+                </a>
+                <button onclick="closeEvidenceModal()" class="flex-1 py-2.5 bg-cmu-600 text-white rounded-2xl text-xs font-bold hover:bg-cmu-700 transition">
                     ปิดหน้าต่าง
                 </button>
             </div>
@@ -1254,7 +1283,7 @@
     <script>
         const SUPABASE_URL = "https://undafgcijvuhvdmyjatk.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn";
-        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzZSMyE0jsyQtE6cfoUc6gWMyIRbQrt9MySO2Vtp-6fEwlA2mjl-W8FS6v6hBKyy-qVgw/exec";
+        const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz4eoX91Wfe0Op7hi3fhSYWCcbA0I_rNeS_bY7Op73pEaCI6s6t6AwJubFL_alluZwZzg/exec";
         const GAS_SYNC_TOKEN = "CAD_SECURE_SYNC_TOKEN_2026";
 
         const API_HEADERS = {
@@ -1855,9 +1884,12 @@
                         <td class="p-3.5">${borrowBadge}</td>
                         <td class="p-3.5 font-mono font-bold text-purple-700 dark:text-purple-400">${safeCode}</td>
                         <td class="p-3.5 text-center">
-                            <button onclick="openQrModal('${safeAssetId}', '${safeSn}', '${safeName.replace(/'/g, "\\'")}', '${escapeHtml(a.asset_code || 'รอเลขครุภัณฑ์').replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-900/40 text-cmu-700 dark:text-cmu-300 hover:bg-cmu-100 transition shadow-2xs" title="พิมพ์ป้าย QR Code">
-                                <i data-lucide="qr-code" class="w-4 h-4"></i>
-                            </button>
+                            <div class="flex items-center justify-center gap-1">
+                                ${a.asset_image ? `<button onclick="viewEvidence('${a.asset_image.replace(/'/g, "\\'")}', 'รูปภาพอุปกรณ์: ${safeName.replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition shadow-2xs" title="ดูรูปภาพอุปกรณ์"><i data-lucide="image" class="w-4 h-4"></i></button>` : ''}
+                                <button onclick="openQrModal('${safeAssetId}', '${safeSn}', '${safeName.replace(/'/g, "\\'")}', '${escapeHtml(a.asset_code || 'รอเลขครุภัณฑ์').replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-cmu-50 dark:bg-cmu-900/40 text-cmu-700 dark:text-cmu-300 hover:bg-cmu-100 transition shadow-2xs" title="พิมพ์ป้าย QR Code">
+                                    <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -2087,7 +2119,10 @@
                         <td class="p-3 text-center no-print">
                             <div class="flex items-center justify-center gap-1">
                                 ${item.borrower_photo ? `<button onclick="viewEvidence('${item.borrower_photo.replace(/'/g, "\\'")}', 'รูปผู้ยืม: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="รูปผู้ยืม"><i data-lucide="user" class="w-3.5 h-3.5"></i></button>` : ''}
-                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature.replace(/'/g, "\\'")}', 'ลายเซ็น: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็น"><i data-lucide="pen-tool" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${item.equip_borrow_photo ? `<button onclick="viewEvidence('${item.equip_borrow_photo.replace(/'/g, "\\'")}', 'รูปอุปกรณ์ตอนยืม: ${safeAssetName.replace(/'/g, "\\'")}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="รูปอุปกรณ์ตอนยืม"><i data-lucide="camera" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${item.borrow_signature ? `<button onclick="viewEvidence('${item.borrow_signature.replace(/'/g, "\\'")}', 'ลายเซ็นผู้ยืม: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1 hover:bg-cmu-100 dark:hover:bg-cmu-900/40 rounded-lg text-cmu-700 dark:text-cmu-300 transition" title="ลายเซ็นผู้ยืม"><i data-lucide="pen-tool" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${item.equip_return_photo ? `<button onclick="viewEvidence('${item.equip_return_photo.replace(/'/g, "\\'")}', 'รูปอุปกรณ์ตอนคืน: ${safeAssetName.replace(/'/g, "\\'")}')" class="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-emerald-700 dark:text-emerald-300 transition" title="รูปอุปกรณ์ตอนคืน"><i data-lucide="check-square" class="w-3.5 h-3.5"></i></button>` : ''}
+                                ${item.return_signature ? `<button onclick="viewEvidence('${item.return_signature.replace(/'/g, "\\'")}', 'ลายเซ็นตอนคืน: ${safeBorrower.replace(/'/g, "\\'")}')" class="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg text-emerald-700 dark:text-emerald-300 transition" title="ลายเซ็นตอนคืน"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -2679,7 +2714,7 @@
 
         <!-- Document Footer -->
         <div class="doc-footer">
-            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.1.1) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.2.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
             <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
         </div>
     </div>
@@ -2905,8 +2940,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v2.1.1",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.1.1 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับอัตโนมัติ (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
+                        target_id: "v2.2.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.2.0 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ และ Auto Drive Image Resolver (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -3884,19 +3919,115 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
         }
 
         // ==========================================
-        // 8. EVIDENCE MODAL & GAS INTEGRATION
+        // 8. EVIDENCE MODAL & GAS INTEGRATION (v2.2.0)
         // ==========================================
 
+        function resolveImageUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            const trimmed = url.trim();
+            if (!trimmed) return '';
+
+            // 1. Data URI (Base64)
+            if (trimmed.startsWith('data:image/')) return trimmed;
+
+            // 2. Google Drive File ID extraction (/file/d/ID or ?id=ID)
+            const driveMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (driveMatch && driveMatch[1]) {
+                return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+            }
+
+            // 3. Google UserContent CDN or any valid web URL
+            if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                return trimmed;
+            }
+
+            // 4. Return trimmed (Relative Path from AppSheet)
+            return trimmed;
+        }
+
         function viewEvidence(url, desc) {
-            document.getElementById('modalImg').src = url;
-            document.getElementById('modalDesc').innerText = desc || '';
-            document.getElementById('modalEvidence').classList.remove('hidden');
+            const modal = document.getElementById('modalEvidence');
+            const modalImg = document.getElementById('modalImg');
+            const modalDesc = document.getElementById('modalDesc');
+            const modalLoading = document.getElementById('modalImgLoading');
+            const modalError = document.getElementById('modalImgError');
+            const modalOpenFullBtn = document.getElementById('modalOpenFullBtn');
+            const modalImgErrorDetail = document.getElementById('modalImgErrorDetail');
+
+            modalDesc.innerText = desc || '';
+            modal.classList.remove('hidden');
+
+            const cleanUrl = resolveImageUrl(url);
+
+            // Reset states
+            modalImg.classList.add('hidden');
+            modalError.classList.add('hidden');
+            modalLoading.classList.remove('hidden');
+
+            // ตรวจสอบว่าเป็น Relative Path จาก AppSheet ที่ยังไม่ได้รับการแปลงเป็น URL สาธารณะหรือไม่
+            const isRelative = !cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://') && !cleanUrl.startsWith('data:');
+
+            if (isRelative) {
+                modalLoading.classList.add('hidden');
+                modalError.classList.remove('hidden');
+                modalImgErrorDetail.innerHTML = `ไฟล์ <code>${escapeHtml(cleanUrl)}</code> ยังไม่ได้แปลงเป็น Public Google Drive CDN Link<br><br><span class="text-cmu-600 font-bold">วิธีแก้ไข:</span> เปิด Google Sheets แล้วคลิกเมนู<br><strong>🚀 Supabase Sync &gt; 🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase</strong>`;
+                modalOpenFullBtn.classList.add('hidden');
+                if (window.lucide) lucide.createIcons();
+                logAudit('VIEW_EVIDENCE', 'MEDIA', url.substring(0, 30), `ตรวจสอบหลักฐาน (Relative Path): ${desc}`);
+                return;
+            }
+
+            modalOpenFullBtn.classList.remove('hidden');
+            modalOpenFullBtn.href = cleanUrl;
+            modalImg.src = cleanUrl;
             logAudit('VIEW_EVIDENCE', 'MEDIA', url.substring(0, 30), `ตรวจสอบหลักฐาน: ${desc}`);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function onEvidenceLoaded() {
+            const modalImg = document.getElementById('modalImg');
+            const modalLoading = document.getElementById('modalImgLoading');
+            const modalError = document.getElementById('modalImgError');
+            if (modalLoading) modalLoading.classList.add('hidden');
+            if (modalError) modalError.classList.add('hidden');
+            if (modalImg) modalImg.classList.remove('hidden');
+        }
+
+        function onEvidenceError() {
+            const modalImg = document.getElementById('modalImg');
+            const modalLoading = document.getElementById('modalImgLoading');
+            const modalError = document.getElementById('modalImgError');
+            const modalImgErrorDetail = document.getElementById('modalImgErrorDetail');
+            if (modalLoading) modalLoading.classList.add('hidden');
+            if (modalImg) modalImg.classList.add('hidden');
+            if (modalError) {
+                modalError.classList.remove('hidden');
+                modalImgErrorDetail.innerHTML = `ไม่สามารถโหลดภาพจากปลายทางได้ (อาจเกิดจากสิทธิ์การแชร์ใน Google Drive หรือลิงก์หมดอายุ)<br><br><span class="text-cmu-600 font-bold">วิธีแก้ไข:</span> เปิด Google Sheets แล้วคลิกเมนู<br><strong>🚀 Supabase Sync &gt; 🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase</strong>`;
+            }
+            if (window.lucide) lucide.createIcons();
         }
 
         function closeEvidenceModal() {
-            document.getElementById('modalEvidence').classList.add('hidden');
+            const modal = document.getElementById('modalEvidence');
+            const modalImg = document.getElementById('modalImg');
+            if (modal) modal.classList.add('hidden');
+            if (modalImg) modalImg.src = '';
         }
+
+        // ปิด Modal หลักฐานเมื่อคลิกพื้นหลัง หรือกดปุ่ม Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modalEvidence');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeEvidenceModal();
+                }
+            }
+        });
+        document.getElementById('modalEvidence').addEventListener('click', (e) => {
+            if (e.target.id === 'modalEvidence') {
+                closeEvidenceModal();
+            }
+        });
 
         async function triggerGasSync() {
             const btn = document.getElementById('btnSyncGas');
