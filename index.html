@@ -1263,6 +1263,7 @@
         const SUPABASE_URL = "https://undafgcijvuhvdmyjatk.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn";
         const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzZSMyE0jsyQtE6cfoUc6gWMyIRbQrt9MySO2Vtp-6fEwlA2mjl-W8FS6v6hBKyy-qVgw/exec";
+        const GAS_SYNC_TOKEN = "CAD_SECURE_SYNC_TOKEN_2026";
 
         const API_HEADERS = {
             "apikey": SUPABASE_ANON_KEY,
@@ -3912,7 +3913,7 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
             icon.classList.add('animate-spin');
 
             try {
-                await fetch(`${GAS_WEBAPP_URL}?action=sync`, { mode: 'no-cors' });
+                await fetch(`${GAS_WEBAPP_URL}?action=sync&token=${encodeURIComponent(GAS_SYNC_TOKEN)}`, { mode: 'no-cors' });
                 alert('🚀 ส่งสัญญาณซิงก์ข้อมูลไปยัง Google Apps Script สำเร็จ!');
                 logAudit('SYNC_GAS', 'GOOGLE_SHEETS', 'AppSheet', 'ส่งสัญญาณซิงก์ข้อมูลระหว่าง Google Sheets และ Supabase');
                 setTimeout(() => loadAllData(), 2500);
