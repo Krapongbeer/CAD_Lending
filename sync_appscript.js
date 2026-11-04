@@ -2,7 +2,7 @@
  * ============================================================================
  * 🚀 Google Apps Script: Auto Sync Google Sheets -> Supabase (v2.2.0)
  * โครงการ: Smart CAD Borrow & New Parcel System
- * Deployment URL: https://script.google.com/macros/s/AKfycbz4eoX91Wfe0Op7hi3fhSYWCcbA0I_rNeS_bY7Op73pEaCI6s6t6AwJubFL_alluZwZzg/exec
+ * Deployment URL: https://script.google.com/macros/s/AKfycbzAoHPZGT4prtJ2-uTmF9jyf67JWINNcbfyUvASHWZ3zXz3bIxBOrdSGIqDQIUworoSVw/exec
  * 
  * ✨ จุดเด่นเวอร์ชัน v2.2.0:
  * 1. 🖼️ Auto Drive Image Resolver: แปลง Relative Path จาก AppSheet (เช่น borrow_transactions_Images/xxx.jpg)
@@ -24,6 +24,87 @@ const CONFIG = {
 
 // In-Memory Cache สำหรับเก็บ File ID และ URL เพื่อลดเวลาค้นหาไฟล์ในไดรฟ์
 const DRIVE_URL_CACHE = {};
+
+/**
+ * ค้นหาไฟล์ใน Google Drive โดยรองรับทั้งโฟลเดอร์ย่อยของ AppSheet (เช่น borrow_transactions_Images)
+ * และการค้นหาทั่วทั้งไดรฟ์
+ */
+function findDriveFile(filePathOrName) {
+  if (!filePathOrName) return null;
+  const raw = String(filePathOrName).trim();
+  const parts = raw.includes('/') ? raw.split('/') : [raw];
+  const fileName = parts.pop();
+  const folderName = parts.length > 0 ? parts[0] : null;
+
+  // วิธีที่ 1: ค้นหาในโฟลเดอร์ของ Spreadsheet และโฟลเดอร์ย่อย (โฟลเดอร์ AppSheet Images)
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ssFile = DriveApp.getFileById(ss.getId());
+    const parents = ssFile.getParents();
+    
+    while (parents.hasNext()) {
+      const parent = parents.next();
+
+      // 1.1 ถ้ามีชื่อโฟลเดอร์ระบุชัดเจน เช่น borrow_transactions_Images หรือ assets_Images
+      if (folderName) {
+        const targetFolders = parent.getFoldersByName(folderName);
+        if (targetFolders.hasNext()) {
+          const targetFolder = targetFolders.next();
+          const targetFiles = targetFolder.getFilesByName(fileName);
+          if (targetFiles.hasNext()) {
+            return targetFiles.next();
+          }
+        }
+      }
+
+      // 1.2 ค้นหาในทุกโฟลเดอร์ย่อยที่อยู่ใต้โฟลเดอร์ของชีต
+      const subFolders = parent.getFolders();
+      while (subFolders.hasNext()) {
+        const sub = subFolders.next();
+        const subFiles = sub.getFilesByName(fileName);
+        if (subFiles.hasNext()) {
+          return subFiles.next();
+        }
+      }
+
+      // 1.3 ค้นหาในโฟลเดอร์แม่โดยตรง
+      const directFiles = parent.getFilesByName(fileName);
+      if (directFiles.hasNext()) {
+        return directFiles.next();
+      }
+    }
+  } catch (errParent) {
+    Logger.log(`Parent search notice for ${fileName}: ${errParent.message}`);
+  }
+
+  // วิธีที่ 2: ค้นหาด้วยชื่อไฟล์โดยตรงทั่วทั้งไดรฟ์
+  try {
+    const files = DriveApp.getFilesByName(fileName);
+    if (files.hasNext()) {
+      return files.next();
+    }
+  } catch (errGlobal) {
+    Logger.log(`Global search notice for ${fileName}: ${errGlobal.message}`);
+  }
+
+  // วิธีที่ 3: ค้นหาด้วยคำค้นหาบางส่วน (Prefix ID เช่น 9e1c57fd)
+  try {
+    const baseId = fileName.split('.')[0];
+    if (baseId && baseId.length >= 6) {
+      const it = DriveApp.searchFiles(`title contains '${baseId.replace(/'/g, "\\'")}' and trashed = false`);
+      while (it.hasNext()) {
+        const f = it.next();
+        if (f.getName() === fileName) {
+          return f;
+        }
+      }
+    }
+  } catch (errSearch) {
+    Logger.log(`Partial search notice for ${fileName}: ${errSearch.message}`);
+  }
+
+  return null;
+}
 
 /**
  * 🖼️ ฟังก์ชันแปลงชื่อไฟล์หรือ Relative Path ของ Google Drive / AppSheet ให้เป็น Google CDN URL
@@ -66,29 +147,8 @@ function resolveDriveFileUrl(filePathOrUrl) {
   }
 
   try {
-    // ค้นหาไฟล์ใน Google Drive
-    let files = DriveApp.getFilesByName(fileName);
-    
-    // หากไม่พบ ให้ลองค้นหาในโฟลเดอร์ของ Spreadsheet ปัจจุบัน
-    if (!files.hasNext()) {
-      try {
-        const ssFile = DriveApp.getFileById(SpreadsheetApp.getActiveSpreadsheet().getId());
-        const parents = ssFile.getParents();
-        while (parents.hasNext() && !files.hasNext()) {
-          const parentFolder = parents.next();
-          const searchSub = parentFolder.searchFiles(`title = '${fileName.replace(/'/g, "\\'")}' and trashed = false`);
-          if (searchSub.hasNext()) {
-            files = searchSub;
-            break;
-          }
-        }
-      } catch (errSearch) {
-        Logger.log(`Error searching parent folders for ${fileName}: ${errSearch.message}`);
-      }
-    }
-
-    if (files.hasNext()) {
-      const file = files.next();
+    const file = findDriveFile(raw);
+    if (file) {
       // ตั้งสิทธิ์ให้อ่านได้สาธารณะผ่านลิงก์ เพื่อให้ browser สามารถโหลดรูปแสดงในเว็บได้
       try {
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -99,13 +159,13 @@ function resolveDriveFileUrl(filePathOrUrl) {
       const fileId = file.getId();
       const cdnUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
       DRIVE_URL_CACHE[fileName] = cdnUrl;
-      Logger.log(`🖼️ แปลงรูปภาพสำเร็จ: ${fileName} -> ${cdnUrl}`);
+      Logger.log(`🖼️ แปลงรูปภาพสำเร็จ: ${raw} -> ${cdnUrl}`);
       return cdnUrl;
     } else {
-      Logger.log(`⚠️ ไม่พบไฟล์ภาพใน Google Drive: ${fileName}`);
+      Logger.log(`⚠️ ไม่พบไฟล์ภาพใน Google Drive: ${raw}`);
     }
   } catch (err) {
-    Logger.log(`❌ เกิดข้อผิดพลาดในการค้นหาไฟล์ (${fileName}): ${err.message}`);
+    Logger.log(`❌ เกิดข้อผิดพลาดในการค้นหาไฟล์ (${raw}): ${err.message}`);
   }
 
   // หากค้นหาไม่พบ ให้ส่งค่าเดิมกลับไป
@@ -143,6 +203,52 @@ function doGet(e) {
       original: fileName,
       url: resolvedUrl
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // 4. เครื่องมือวินิจฉัยและตรวจสอบโฟลเดอร์ Google Drive (Diagnose)
+  if (action === 'diagnose') {
+    const q = (e && e.parameter && e.parameter.q) ? String(e.parameter.q) : '9e1c57fd';
+    const report = {
+      query: q,
+      driveAccessible: false,
+      foundFiles: [],
+      parentFolders: [],
+      error: null
+    };
+
+    try {
+      report.driveAccessible = true;
+      const it = DriveApp.searchFiles(`title contains '${q.replace(/'/g, "\\'")}' and trashed = false`);
+      while (it.hasNext() && report.foundFiles.length < 15) {
+        const f = it.next();
+        report.foundFiles.push({
+          id: f.getId(),
+          name: f.getName(),
+          mime: f.getMimeType(),
+          url: "https://lh3.googleusercontent.com/d/" + f.getId()
+        });
+      }
+
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      report.spreadsheetName = ss.getName();
+      report.spreadsheetId = ss.getId();
+      const ssFile = DriveApp.getFileById(ss.getId());
+      const parents = ssFile.getParents();
+      while (parents.hasNext()) {
+        const p = parents.next();
+        const pObj = { id: p.getId(), name: p.getName(), subFolders: [] };
+        const subF = p.getFolders();
+        while (subF.hasNext()) {
+          const sf = subF.next();
+          pObj.subFolders.push({ id: sf.getId(), name: sf.getName() });
+        }
+        report.parentFolders.push(pObj);
+      }
+    } catch (err) {
+      report.error = err.message + ' (Stack: ' + err.stack + ')';
+    }
+
+    return ContentService.createTextOutput(JSON.stringify(report, null, 2)).setMimeType(ContentService.MimeType.JSON);
   }
 
   // 🛡️ ตรวจสอบ Secret Token เพื่อป้องกันคำขอก่อกวน
