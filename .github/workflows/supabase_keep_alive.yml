@@ -1,0 +1,30 @@
+name: Supabase Keep-Alive Ping (Prevent Inactivity Pause)
+
+on:
+  schedule:
+    # รันอัตโนมัติทุกๆ 3 วัน เวลา 06:00 UTC (13:00 น. เวลาไทย)
+    - cron: '0 6 */3 * *'
+  workflow_dispatch: # อนุญาตให้กดสั่ง Ping ด้วยมือได้ตลอดเวลาจาก GitHub Actions
+
+jobs:
+  keep-alive:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Keep-Alive Ping to Supabase REST API
+        run: |
+          echo "🚀 Sending Keep-Alive Ping to Supabase at $(date -u)"
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "https://undafgcijvuhvdmyjatk.supabase.co/rest/v1/assets?select=asset_id&limit=1" \
+            -H "apikey: sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn" \
+            -H "Authorization: Bearer sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn" \
+            -H "User-Agent: GitHub-Actions-SmartCAD-KeepAlive/2.0")
+          
+          echo "📡 HTTP Response Code: $STATUS_CODE"
+          
+          if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 300 ]; then
+            echo "✅ Supabase is ACTIVE and Keep-Alive signal was received successfully."
+          else
+            echo "⚠️ Unexpected status code: $STATUS_CODE (Check if project is already paused or credentials changed)"
+            exit 1
+          fi

@@ -59,7 +59,7 @@
 
 ---
 
-## 📌 ขั้นตอนที่ 3: ติดตั้ง Auto-Sync ด้วย Google Apps Script
+## 📌 ขั้นตอนที่ 3: ติดตั้ง Auto-Sync & ระบบป้องกัน Supabase หลับ (Keep-Alive) ด้วย Google Apps Script
 
 1. ในหน้า Google Sheets ให้ไปที่เมนูด้านบน: **Extensions (ส่วนขยาย) > Apps Script**
 2. ลบโค้ดเดิมออกทั้งหมด
@@ -67,6 +67,11 @@
 4. กด **Save (บันทึก 💾)**
 5. รีเฟรชหน้า Google Sheets จะพบเมนูใหม่ชื่อ **`🚀 Supabase Sync`** ที่แถบเมนูด้านบน
 6. สามารถกด **🔄 ซิงก์ข้อมูลทั้งหมดไป Supabase** ได้ทันทีด้วยคลิกเดียว
+7. **⏰ เปิดระบบป้องกัน Supabase หลับ (Keep-Alive 24/7):**
+   - คลิกเมนู **`🚀 Supabase Sync` > `⏰ ติดตั้งระบบป้องกัน Supabase หลับ (Keep-Alive ทุก 2 วัน)`**
+   - กดยินยอมสิทธิ์ (Authorization) ตามที่ Google ร้องขอ
+   - ระบบ Google Cloud จะส่งสัญญาณ Ping กระตุ้น Supabase ทุกๆ 2 วันโดยอัตโนมัติ หมดปัญหาโปรเจกต์ Free Tier ถูกระงับ (Paused) เมื่อไม่มีการเคลื่อนไหวเกิน 7 วัน
+   - นอกจากนี้ ยังมีระบบสำรอง **GitHub Actions (`supabase_keep_alive.yml`)** คอย Ping ทุกๆ 3 วันอีกหนึ่งชั้น เพื่อความปลอดภัย 100%
 
 ---
 
