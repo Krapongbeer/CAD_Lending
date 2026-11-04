@@ -297,7 +297,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.2.0</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.2.1</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -436,7 +436,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.2.0</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.2.1</span>
                 </div>
             </div>
         </aside>
@@ -1327,6 +1327,50 @@
             return val;
         }
 
+        // 🗓️ Smart Thai Buddhist Era Date Parser & Formatter (Prevents Year 3112 Double-Offset Bug)
+        function parseDateSmart(dateInput) {
+            if (!dateInput) return null;
+            if (dateInput instanceof Date) {
+                let d = new Date(dateInput.getTime());
+                if (d.getFullYear() > 2400) {
+                    d.setFullYear(d.getFullYear() - 543);
+                }
+                return d;
+            }
+            const str = String(dateInput).trim();
+            if (!str) return null;
+
+            // ตรวจจับกรณีสตริงขึ้นต้นด้วย พ.ศ. (เช่น "2569-11-04" หรือ "2569/11/04")
+            const beMatch = str.match(/^(\d{4})([-/])(\d{1,2})([-/])(\d{1,2})(.*)$/);
+            if (beMatch) {
+                let year = parseInt(beMatch[1], 10);
+                const month = beMatch[3].padStart(2, '0');
+                const day = beMatch[5].padStart(2, '0');
+                const rest = beMatch[6] || '';
+                if (year > 2400) {
+                    year -= 543;
+                }
+                const isoStr = `${year}-${month}-${day}${rest.startsWith('T') ? rest : (rest ? ' ' + rest.trim() : '')}`;
+                const parsed = new Date(isoStr);
+                if (!isNaN(parsed.getTime())) return parsed;
+            }
+
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                if (d.getFullYear() > 2400) {
+                    d.setFullYear(d.getFullYear() - 543);
+                }
+                return d;
+            }
+            return null;
+        }
+
+        function formatThaiDate(dateInput, options = { year: 'numeric', month: 'short', day: 'numeric' }) {
+            const d = parseDateSmart(dateInput);
+            if (!d || isNaN(d.getTime())) return '-';
+            return d.toLocaleDateString('th-TH', options);
+        }
+
         // Security Architecture: No plaintext credentials in client code.
         // Authentication is verified securely on PostgreSQL Engine via Supabase RPC (Bcrypt salted hash)
         let currentUser = null;
@@ -1810,8 +1854,8 @@
                     ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">เกินกำหนด (${Number(item.days_overdue) || 0} วัน)</span>`
                     : `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800">กำลังยืม</span>`;
 
-                const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
-                const borrowDate = item.borrow_date ? new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+                const dueDate = formatThaiDate(item.due_date);
+                const borrowDate = formatThaiDate(item.borrow_date);
 
                 const safeTxId = escapeHtml(item.tx_id);
                 const safeAssetName = escapeHtml(item.asset_name);
@@ -1912,7 +1956,7 @@
                 const safeName = escapeHtml(it.asset_name);
                 const safeSn = escapeHtml(it.serial_number);
                 const safeCat = escapeHtml(it.category);
-                const parcelDate = it.parcel_assigned_at ? new Date(it.parcel_assigned_at).toLocaleDateString('th-TH') : '-';
+                const parcelDate = formatThaiDate(it.parcel_assigned_at);
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkslate-800/40 transition">
@@ -1945,7 +1989,7 @@
 
                     cacheReports = txs.map(tx => {
                         const a = assetMap[tx.asset_id] || {};
-                        const dueDateObj = new Date(tx.due_date);
+                        const dueDateObj = parseDateSmart(tx.due_date);
                         const isOverdue = tx.tx_status === 'กำลังยืม' && new Date() > dueDateObj;
                         const diffDays = Math.ceil((new Date() - dueDateObj) / (1000 * 60 * 60 * 24));
                         return {
@@ -2084,9 +2128,9 @@
                     ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 badge-print-returned"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>คืนแล้ว</span>`
                     : `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800 badge-print-active"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>กำลังยืม</span>`;
 
-                const dueDate = item.due_date ? new Date(item.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : "-";
-                const borrowDate = item.borrow_date ? new Date(item.borrow_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : "-";
-                const returnDate = item.return_date ? new Date(item.return_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : (isReturned ? "ส่งคืนแล้ว" : "-");
+                const dueDate = formatThaiDate(item.due_date);
+                const borrowDate = formatThaiDate(item.borrow_date);
+                const returnDate = item.return_date ? formatThaiDate(item.return_date) : (isReturned ? "ส่งคืนแล้ว" : "-");
 
                 const safeTxId = escapeHtml(item.tx_id);
                 const safeAssetCode = item.asset_code ? escapeHtml(item.asset_code) : "-";
@@ -2154,9 +2198,9 @@
                 "ชื่อ-สกุลผู้ยืม": sanitizeExcelVal(it.borrower_name),
                 "ส่วนงาน/สังกัด": sanitizeExcelVal(it.department),
                 "เบอร์โทรศัพท์": sanitizeExcelVal(it.phone || "-"),
-                "วันที่ยืม": new Date(it.borrow_date).toLocaleDateString('th-TH'),
-                "กำหนดส่งคืน": new Date(it.due_date).toLocaleDateString('th-TH'),
-                "วันที่คืนจริง": it.return_date ? new Date(it.return_date).toLocaleDateString('th-TH') : "-",
+                "วันที่ยืม": formatThaiDate(it.borrow_date),
+                "กำหนดส่งคืน": formatThaiDate(it.due_date),
+                "วันที่คืนจริง": it.return_date ? formatThaiDate(it.return_date) : "-",
                 "สภาพพัสดุ": sanitizeExcelVal(it.condition || "01 - สภาพดี/ปกติ"),
                 "สถานะรายการ": sanitizeExcelVal(it.current_status),
                 "เกินกำหนด (วัน)": it.days_overdue > 0 ? it.days_overdue : 0,
@@ -2186,13 +2230,7 @@
 
             const formatShortDate = (d) => {
                 if (!d || d === '-') return '-';
-                try {
-                    const dateObj = new Date(d);
-                    if (isNaN(dateObj.getTime())) return d;
-                    return dateObj.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' });
-                } catch(e) {
-                    return d;
-                }
+                return formatThaiDate(d, { year: '2-digit', month: 'short', day: 'numeric' });
             };
 
             const rowsHtml = items.map((it, idx) => {
@@ -2716,7 +2754,7 @@
 
         <!-- Document Footer -->
         <div class="doc-footer">
-            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.2.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.2.1) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
             <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
         </div>
     </div>
@@ -2942,8 +2980,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v2.2.0",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.2.0 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ และ Auto Drive Image Resolver (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
+                        target_id: "v2.2.1",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.2.1 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive, Auto Drive Image Resolver และ Smart Thai Date Normalizer แก้ไขปี พ.ศ. 3112 (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
                         ip_address: "10.155.40.1"
                     },
                     {
@@ -4193,10 +4231,10 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
             document.getElementById('renewAssetId').value = assetId;
             document.getElementById('renewItemName').innerText = assetName;
             document.getElementById('renewBorrower').innerText = borrowerName;
-            document.getElementById('renewOldDue').innerText = new Date(oldDueDate).toLocaleDateString('th-TH');
+            document.getElementById('renewOldDue').innerText = formatThaiDate(oldDueDate);
             
             // Suggest default 7 days extension
-            const nextDue = new Date(oldDueDate);
+            const nextDue = parseDateSmart(oldDueDate) || new Date();
             nextDue.setDate(nextDue.getDate() + 7);
             document.getElementById('renewNewDueDate').value = nextDue.toISOString().split('T')[0];
             document.getElementById('renewReason').value = "";
@@ -4235,7 +4273,7 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
 
                 if (res.ok) {
                     logAudit('RENEW_BORROW', 'TRANSACTION', txId, `ขอต่ออายุการยืมถึง ${newDue} (เหตุผล: ${reason})`);
-                    alert(`✅ ต่ออายุการยืมเรียบร้อยแล้ว กำหนดส่งคืนใหม่คือ ${new Date(newDue).toLocaleDateString('th-TH')}`);
+                    alert(`✅ ต่ออายุการยืมเรียบร้อยแล้ว กำหนดส่งคืนใหม่คือ ${formatThaiDate(newDue)}`);
                     closeRenewModal();
                     loadAllData();
                 } else {

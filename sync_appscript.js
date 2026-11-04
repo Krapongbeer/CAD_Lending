@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * 🚀 Google Apps Script: Auto Sync Google Sheets -> Supabase (v2.2.0)
+ * 🚀 Google Apps Script: Auto Sync Google Sheets -> Supabase (v2.2.1)
  * โครงการ: Smart CAD Borrow & New Parcel System
  * Deployment URL: https://script.google.com/macros/s/AKfycbyjqIimW2ZHl3rG6oT9O6FEEx1YorhjT33udHSHNF6jIc0RWA-CpHqIesZRMkFkC_NI4A/exec
  * 
@@ -182,8 +182,8 @@ function doGet(e) {
   if (action === 'ping') {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'ok',
-      version: 'v2.2.0',
-      message: 'GAS Web App is active (v2.2.0 Auto Drive Image Resolver & Keep-Alive)',
+      version: 'v2.2.1',
+      message: 'GAS Web App is active (v2.2.1 Auto Drive Image Resolver, Thai Date Normalizer & Keep-Alive)',
       timestamp: new Date().toISOString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -266,7 +266,7 @@ function doGet(e) {
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'success',
-    version: 'v2.2.0',
+    version: 'v2.2.1',
     timestamp: new Date().toISOString(),
     results: {
       assets: resAssets,
@@ -300,7 +300,7 @@ function doPost(e) {
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'success',
-    version: 'v2.2.0',
+    version: 'v2.2.1',
     received: body,
     timestamp: new Date().toISOString(),
     results: {
@@ -425,7 +425,19 @@ function syncTableToSupabase(sheetName, tableName, onConflictKey) {
       let val = row[j];
 
       if (val instanceof Date) {
+        let yr = val.getFullYear();
+        if (yr > 2400) {
+          // 🗓️ ป้องกัน พ.ศ. ซ้ำซ้อน: หากเป็นปี พ.ศ. (เช่น 2569) ให้แปลงเป็น ค.ศ. (2026) ก่อนส่งเข้า Supabase
+          val = new Date(val.getTime());
+          val.setFullYear(yr - 543);
+        }
         val = Utilities.formatDate(val, Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      } else if (typeof val === 'string' && /^\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(val)) {
+        const m = val.match(/^(\d{4})([-/])(\d{1,2})([-/])(\d{1,2})(.*)$/);
+        if (m && parseInt(m[1], 10) > 2400) {
+          const yr = parseInt(m[1], 10) - 543;
+          val = `${yr}-${m[3].padStart(2, '0')}-${m[5].padStart(2, '0')}${m[6] || ''}`;
+        }
       } else if (val === '' || val === null || val === undefined) {
         val = null;
       } else if (typeof val === 'string' && IMAGE_FIELD_REGEX.test(key)) {
