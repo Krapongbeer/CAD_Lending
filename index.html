@@ -1100,8 +1100,10 @@
                         </div>
                     </div>
 
-                    <!-- Main Image Element -->
-                    <img id="modalImg" src="" alt="Evidence" class="max-w-full max-h-full object-contain transition duration-200" onload="onEvidenceLoaded()" onerror="onEvidenceError()">
+                    <!-- Main Image Element with no-referrer policy -->
+                    <img id="modalImg" src="" alt="Evidence" class="max-w-full max-h-full object-contain transition duration-200" referrerpolicy="no-referrer" onload="onEvidenceLoaded()" onerror="onEvidenceError()">
+                    <!-- Embedded Iframe preview fallback -->
+                    <iframe id="modalIframe" src="" class="hidden w-full h-full border-0 rounded-2xl" allow="autoplay" referrerpolicy="no-referrer"></iframe>
                 </div>
                 <p id="modalDesc" class="text-xs text-slate-500 dark:text-slate-400 text-center font-medium"></p>
             </div>
@@ -3922,6 +3924,15 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
         // 8. EVIDENCE MODAL & GAS INTEGRATION (v2.2.0)
         // ==========================================
 
+        let activeEvidenceDriveId = null;
+        let activeEvidenceStep = 0;
+
+        function extractDriveId(url) {
+            if (!url || typeof url !== 'string') return null;
+            const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            return m ? m[1] : null;
+        }
+
         function resolveImageUrl(url) {
             if (!url || typeof url !== 'string') return '';
             const trimmed = url.trim();
@@ -3930,10 +3941,11 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
             // 1. Data URI (Base64)
             if (trimmed.startsWith('data:image/')) return trimmed;
 
-            // 2. Google Drive File ID extraction (/file/d/ID or ?id=ID)
-            const driveMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-            if (driveMatch && driveMatch[1]) {
-                return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+            // 2. Google Drive File ID extraction
+            const driveId = extractDriveId(trimmed);
+            if (driveId) {
+                // High-resolution thumbnail API format with sz=w1200 allows third-party embedding with no-referrer
+                return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`;
             }
 
             // 3. Google UserContent CDN or any valid web URL
@@ -3948,6 +3960,7 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
         function viewEvidence(url, desc) {
             const modal = document.getElementById('modalEvidence');
             const modalImg = document.getElementById('modalImg');
+            const modalIframe = document.getElementById('modalIframe');
             const modalDesc = document.getElementById('modalDesc');
             const modalLoading = document.getElementById('modalImgLoading');
             const modalError = document.getElementById('modalImgError');
@@ -3957,10 +3970,17 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
             modalDesc.innerText = desc || '';
             modal.classList.remove('hidden');
 
+            activeEvidenceDriveId = extractDriveId(url);
+            activeEvidenceStep = 0;
+
             const cleanUrl = resolveImageUrl(url);
 
             // Reset states
             modalImg.classList.add('hidden');
+            if (modalIframe) {
+                modalIframe.classList.add('hidden');
+                modalIframe.src = '';
+            }
             modalError.classList.add('hidden');
             modalLoading.classList.remove('hidden');
 
@@ -3977,8 +3997,14 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
                 return;
             }
 
+            // ตั้งค่าปุ่มเปิดภาพขนาดเต็มในแท็บใหม่
             modalOpenFullBtn.classList.remove('hidden');
-            modalOpenFullBtn.href = cleanUrl;
+            if (activeEvidenceDriveId) {
+                modalOpenFullBtn.href = `https://lh3.googleusercontent.com/d/${activeEvidenceDriveId}`;
+            } else {
+                modalOpenFullBtn.href = cleanUrl;
+            }
+
             modalImg.src = cleanUrl;
             logAudit('VIEW_EVIDENCE', 'MEDIA', url.substring(0, 30), `ตรวจสอบหลักฐาน: ${desc}`);
             if (window.lucide) lucide.createIcons();
@@ -3986,23 +4012,51 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
 
         function onEvidenceLoaded() {
             const modalImg = document.getElementById('modalImg');
+            const modalIframe = document.getElementById('modalIframe');
             const modalLoading = document.getElementById('modalImgLoading');
             const modalError = document.getElementById('modalImgError');
             if (modalLoading) modalLoading.classList.add('hidden');
             if (modalError) modalError.classList.add('hidden');
+            if (modalIframe) modalIframe.classList.add('hidden');
             if (modalImg) modalImg.classList.remove('hidden');
         }
 
         function onEvidenceError() {
             const modalImg = document.getElementById('modalImg');
+            const modalIframe = document.getElementById('modalIframe');
             const modalLoading = document.getElementById('modalImgLoading');
             const modalError = document.getElementById('modalImgError');
             const modalImgErrorDetail = document.getElementById('modalImgErrorDetail');
+
+            // Fallback Engine สำหรับ Google Drive
+            if (activeEvidenceDriveId) {
+                activeEvidenceStep++;
+                if (activeEvidenceStep === 1) {
+                    // ลำดับที่ 1: ลองรูปแบบ Google UserContent CDN
+                    modalImg.src = `https://lh3.googleusercontent.com/d/${activeEvidenceDriveId}`;
+                    return;
+                } else if (activeEvidenceStep === 2) {
+                    // ลำดับที่ 2: ลองรูปแบบ uc?export=view
+                    modalImg.src = `https://drive.google.com/uc?export=view&id=${activeEvidenceDriveId}`;
+                    return;
+                } else if (activeEvidenceStep === 3) {
+                    // ลำดับที่ 3: สลับเป็น Embedded Iframe Preview ของ Google Drive อัตโนมัติ (ข้ามข้อจำกัด CORS / Cookies 100%)
+                    if (modalLoading) modalLoading.classList.add('hidden');
+                    if (modalImg) modalImg.classList.add('hidden');
+                    if (modalError) modalError.classList.add('hidden');
+                    if (modalIframe) {
+                        modalIframe.src = `https://drive.google.com/file/d/${activeEvidenceDriveId}/preview`;
+                        modalIframe.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+
             if (modalLoading) modalLoading.classList.add('hidden');
             if (modalImg) modalImg.classList.add('hidden');
             if (modalError) {
                 modalError.classList.remove('hidden');
-                modalImgErrorDetail.innerHTML = `ไม่สามารถโหลดภาพจากปลายทางได้ (อาจเกิดจากสิทธิ์การแชร์ใน Google Drive หรือลิงก์หมดอายุ)<br><br><span class="text-cmu-600 font-bold">วิธีแก้ไข:</span> เปิด Google Sheets แล้วคลิกเมนู<br><strong>🚀 Supabase Sync &gt; 🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase</strong>`;
+                modalImgErrorDetail.innerHTML = `ไม่สามารถโหลดภาพจากปลายทางได้โดยตรง กรุณากดปุ่ม <b>"เปิดภาพขนาดเต็ม"</b> ด้านล่างเพื่อดูรูปภาพผ่าน Google Drive`;
             }
             if (window.lucide) lucide.createIcons();
         }
@@ -4010,8 +4064,13 @@ GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO
         function closeEvidenceModal() {
             const modal = document.getElementById('modalEvidence');
             const modalImg = document.getElementById('modalImg');
+            const modalIframe = document.getElementById('modalIframe');
             if (modal) modal.classList.add('hidden');
             if (modalImg) modalImg.src = '';
+            if (modalIframe) {
+                modalIframe.src = '';
+                modalIframe.classList.add('hidden');
+            }
         }
 
         // ปิด Modal หลักฐานเมื่อคลิกพื้นหลัง หรือกดปุ่ม Escape
