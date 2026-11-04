@@ -2,7 +2,7 @@
  * ============================================================================
  * 🚀 Google Apps Script: Auto Sync Google Sheets -> Supabase (v2.2.0)
  * โครงการ: Smart CAD Borrow & New Parcel System
- * Deployment URL: https://script.google.com/macros/s/AKfycbzAoHPZGT4prtJ2-uTmF9jyf67JWINNcbfyUvASHWZ3zXz3bIxBOrdSGIqDQIUworoSVw/exec
+ * Deployment URL: https://script.google.com/macros/s/AKfycbyjqIimW2ZHl3rG6oT9O6FEEx1YorhjT33udHSHNF6jIc0RWA-CpHqIesZRMkFkC_NI4A/exec
  * 
  * ✨ จุดเด่นเวอร์ชัน v2.2.0:
  * 1. 🖼️ Auto Drive Image Resolver: แปลง Relative Path จาก AppSheet (เช่น borrow_transactions_Images/xxx.jpg)
