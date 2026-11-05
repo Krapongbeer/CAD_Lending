@@ -466,17 +466,10 @@ BEGIN
 END;
 $$;
 
--- ฟังก์ชัน Overload สำหรับรองรับคำขอเดิม 2 พารามิเตอร์
-CREATE OR REPLACE FUNCTION authenticate_user(p_username TEXT, p_password TEXT)
-RETURNS JSONB
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-    SELECT authenticate_user(p_username, p_password, 'web-client');
-$$;
+-- ลบฟังก์ชัน Overload เดิมเพื่อป้องกัน PostgREST PGRST203 Ambiguity
+DROP FUNCTION IF EXISTS authenticate_user(TEXT, TEXT);
 
 GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT, TEXT) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION authenticate_user(TEXT, TEXT) TO anon, authenticated;
 
 -- ============================================================================
 -- 11. 📜 Enterprise Audit Logging System (90-Day Retention Policy & Append-Only)

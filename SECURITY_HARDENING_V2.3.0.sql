@@ -239,6 +239,7 @@ GRANT SELECT ON view_system_users TO anon, authenticated;
 -- ============================================================================
 
 -- 6.1 ตรวจสอบการเข้าสู่ระบบอย่างปลอดภัย พร้อม Brute-force Rate Limiting
+DROP FUNCTION IF EXISTS authenticate_user(TEXT, TEXT);
 CREATE OR REPLACE FUNCTION authenticate_user(
     p_username TEXT, 
     p_password TEXT,

@@ -1582,7 +1582,7 @@
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/authenticate_user`, {
                     method: "POST",
                     headers: API_HEADERS,
-                    body: JSON.stringify({ p_username: u, p_password: p })
+                    body: JSON.stringify({ p_username: u, p_password: p, p_ip_address: "127.0.0.1" })
                 });
 
                 if (res.ok) {
@@ -1601,6 +1601,12 @@
                         setupRealtimeSubscriptions();
                         resetIdleTimer();
                         logAudit('LOGIN', 'AUTH', user.username, `เข้าสู่ระบบสำเร็จในบทบาท ${user.role} (${user.full_name})`);
+                        return;
+                    } else if (result && result.message) {
+                        if (errBox) {
+                            if (errMsg) errMsg.innerText = result.message;
+                            errBox.classList.remove("hidden");
+                        }
                         return;
                     }
                 }
