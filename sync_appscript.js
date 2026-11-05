@@ -1,15 +1,16 @@
 /**
  * ============================================================================
- * 🚀 Google Apps Script: Auto Sync Google Sheets -> Supabase (v2.2.1)
+ * 🚀 Google Apps Script: Auto Sync Google Sheets -> Supabase (v2.3.0)
  * โครงการ: Smart CAD Borrow & New Parcel System
  * Deployment URL: https://script.google.com/macros/s/AKfycbyjqIimW2ZHl3rG6oT9O6FEEx1YorhjT33udHSHNF6jIc0RWA-CpHqIesZRMkFkC_NI4A/exec
  * 
- * ✨ จุดเด่นเวอร์ชัน v2.2.0:
- * 1. 🖼️ Auto Drive Image Resolver: แปลง Relative Path จาก AppSheet (เช่น borrow_transactions_Images/xxx.jpg)
+ * ✨ จุดเด่นเวอร์ชัน v2.3.0:
+ * 1. 🛡️ Security Hardened: ปกป้องโหมด Diagnose ด้วย Secret Sync Token ป้องกันการรั่วไหลของ Metadata ไดรฟ์
+ * 2. 🖼️ Auto Drive Image Resolver: แปลง Relative Path จาก AppSheet (เช่น borrow_transactions_Images/xxx.jpg)
  *    เป็น Google CDN Direct Link (https://lh3.googleusercontent.com/d/{fileId}) อัตโนมัติขณะซิงก์
- * 2. 🔓 Public Read Permission: ปรับสิทธิ์ไฟล์ใน Drive เป็น "ทุกคนที่มีลิงก์ดูได้" อัตโนมัติ เพื่อให้หน้าเว็บโหลดรูปและลายเซ็นได้ 100%
- * 3. 🛠️ One-Click Image Repair: เพิ่มเมนู "🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase" แก้รูปภาพที่มีอยู่แล้วในคลิกเดียว
- * 4. ⏰ Dual Keep-Alive Engine: ป้องกันฐานข้อมูล Supabase หยุดทำงานเมื่อไม่มีการเคลื่อนไหวเกิน 7 วัน
+ * 3. 🔓 Public Read Permission: ปรับสิทธิ์ไฟล์ใน Drive เป็น "ทุกคนที่มีลิงก์ดูได้" อัตโนมัติ เพื่อให้หน้าเว็บโหลดรูปและลายเซ็นได้ 100%
+ * 4. 🛠️ One-Click Image Repair: เมนู "🖼️ ซ่อมแซมและอัปเดตลิงก์รูปภาพทั้งหมดไป Supabase" แก้รูปภาพที่มีอยู่แล้วในคลิกเดียว
+ * 5. ⏰ Dual Keep-Alive Engine: ป้องกันฐานข้อมูล Supabase หยุดทำงานเมื่อไม่มีการเคลื่อนไหวเกิน 7 วัน
  * ============================================================================
  */
 
@@ -182,8 +183,8 @@ function doGet(e) {
   if (action === 'ping') {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'ok',
-      version: 'v2.2.1',
-      message: 'GAS Web App is active (v2.2.1 Auto Drive Image Resolver, Thai Date Normalizer & Keep-Alive)',
+      version: 'v2.3.0',
+      message: 'GAS Web App is active (v2.3.0 Hardened Auto Drive Image Resolver, Thai Date Normalizer & Keep-Alive)',
       timestamp: new Date().toISOString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -205,8 +206,16 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // 4. เครื่องมือวินิจฉัยและตรวจสอบโฟลเดอร์ Google Drive (Diagnose)
+  // 4. เครื่องมือวินิจฉัยและตรวจสอบโฟลเดอร์ Google Drive (Diagnose - 🛡️ ต้องใช้ Token ยืนยันสิทธิ์)
   if (action === 'diagnose') {
+    const diagToken = e && e.parameter && e.parameter.token;
+    if (CONFIG.SYNC_TOKEN && diagToken !== CONFIG.SYNC_TOKEN) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: '401 Unauthorized: Token ไม่ถูกต้อง ไม่อนุญาตให้เข้าถึงข้อมูลวินิจฉัยภายใน'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     const q = (e && e.parameter && e.parameter.q) ? String(e.parameter.q) : '9e1c57fd';
     const report = {
       query: q,
@@ -266,7 +275,7 @@ function doGet(e) {
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'success',
-    version: 'v2.2.1',
+    version: 'v2.3.0',
     timestamp: new Date().toISOString(),
     results: {
       assets: resAssets,
@@ -300,7 +309,7 @@ function doPost(e) {
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'success',
-    version: 'v2.2.1',
+    version: 'v2.3.0',
     received: body,
     timestamp: new Date().toISOString(),
     results: {

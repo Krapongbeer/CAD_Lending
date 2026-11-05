@@ -297,7 +297,7 @@
                 </div>
                 <div class="flex items-center justify-center gap-1.5">
                     <span class="px-2.5 py-0.5 rounded-full bg-cmu-100 dark:bg-cmu-900/50 text-cmu-800 dark:text-cmu-300 text-xs font-bold font-mono">SmartCAD-Lending</span>
-                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.2.1</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-cmu-700 text-white text-[10px] font-black font-mono">v2.3.0</span>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-display">เข้าสู่ระบบยืม-คืนอุปกรณ์</h2>
                 <p class="text-xs text-cmu-700 dark:text-cmu-300 font-medium">กองบริหารงานกลาง มหาวิทยาลัยเชียงใหม่</p>
@@ -436,7 +436,7 @@
                 </div>
                 <div class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center justify-between px-1 pt-1 border-t border-slate-100 dark:border-darkslate-800/60">
                     <span>กองบริหารงานกลาง มช. © 2026</span>
-                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.2.1</span>
+                    <span class="font-mono text-cmu-600 dark:text-cmu-400">v2.3.0</span>
                 </div>
             </div>
         </aside>
@@ -1403,10 +1403,12 @@
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     const validRoles = ['superadmin', 'admin', 'staff', 'executive'];
-                    if (parsed && parsed.username && validRoles.includes(parsed.role)) {
+                    const MAX_SESSION_AGE = 8 * 60 * 60 * 1000; // 8 hours absolute session validity
+                    const isExpired = parsed.authenticatedAt && (Date.now() - parsed.authenticatedAt > MAX_SESSION_AGE);
+                    if (parsed && parsed.username && validRoles.includes(parsed.role) && !isExpired) {
                         currentUser = parsed;
                     } else {
-                        console.warn("Invalid session data detected, clearing session.");
+                        console.warn("Session expired or invalid, clearing session.");
                         localStorage.removeItem("cad_lending_user");
                         currentUser = null;
                     }
@@ -1588,6 +1590,7 @@
                     if (result && result.success) {
                         loginAttemptCount = 0; // Reset counter on success
                         const user = result.user;
+                        user.authenticatedAt = Date.now();
                         const avatarMap = { superadmin: "👑", admin: "📦", staff: "📱", executive: "📊" };
                         user.avatar = avatarMap[user.role] || "👤";
 
@@ -1602,7 +1605,7 @@
                     }
                 }
 
-                // Hybrid Authentication Fallback: Check local system users cache or emergency superadmin credentials
+                // Secure Local Fallback: Verify ONLY against salted Bcrypt hash (No plaintext credentials allowed)
                 let fallbackUser = null;
                 try {
                     const localUsers = JSON.parse(localStorage.getItem("cad_system_users") || "[]");
@@ -1610,28 +1613,15 @@
                     if (matched) {
                         const bcryptObj = window.dcodeIO ? window.dcodeIO.bcrypt : (window.bcrypt || null);
                         let passwordOk = false;
-                        if (matched.plain_password && matched.plain_password === p) {
-                            passwordOk = true;
-                        } else if (matched.password_hash && bcryptObj && typeof bcryptObj.compareSync === "function") {
+                        if (matched.password_hash && bcryptObj && typeof bcryptObj.compareSync === "function") {
                             try { passwordOk = bcryptObj.compareSync(p, matched.password_hash); } catch(_) {}
-                        } else if (matched.username === 'superadmin' && (p === 'superadmin1234' || p === 'admin')) {
-                            passwordOk = true;
                         }
-                        if (passwordOk) fallbackUser = matched;
+                        if (passwordOk) {
+                            matched.authenticatedAt = Date.now();
+                            fallbackUser = matched;
+                        }
                     }
                 } catch(_) {}
-
-                // Emergency superadmin fallback
-                if (!fallbackUser && u === 'superadmin' && (p === 'superadmin1234' || p === 'admin')) {
-                    fallbackUser = {
-                        id: 1,
-                        username: 'superadmin',
-                        full_name: 'ผู้ดูแลระบบสูงสุด',
-                        role: 'superadmin',
-                        department: 'กองบริหารงานกลาง มช.',
-                        email: 'superadmin@cmu.ac.th'
-                    };
-                }
 
                 if (fallbackUser) {
                     loginAttemptCount = 0;
@@ -2754,7 +2744,7 @@
 
         <!-- Document Footer -->
         <div class="doc-footer">
-            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.2.1) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
+            <div>ระบบสารสนเทศงานพัสดุและครุภัณฑ์ SmartCAD-Lending (v2.3.0) • กองบริหารงานกลาง สำนักงานมหาวิทยาลัย มหาวิทยาลัยเชียงใหม่</div>
             <div>รายงานมาตรฐานตามระเบียบพัสดุภาครัฐ • หน้า 1 จาก 1</div>
         </div>
     </div>
@@ -2980,8 +2970,8 @@
                         user_role: "superadmin",
                         action: "SYSTEM_INIT",
                         target_type: "DATABASE",
-                        target_id: "v2.2.1",
-                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.2.1 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive, Auto Drive Image Resolver และ Smart Thai Date Normalizer แก้ไขปี พ.ศ. 3112 (Strict RLS, Immutable Audit Logs, Rate-Limiting, Re-auth, XSS Protection)",
+                        target_id: "v2.3.0",
+                        details: "เริ่มต้นระบบ SmartCAD-Lending v2.3.0 สถาปัตยกรรมความปลอดภัยระดับสูง พร้อมระบบ Dual Keep-Alive, Restrictive Deny Delete RLS, PostgreSQl search_path Hardening และ Auto Drive Image Resolver",
                         ip_address: "10.155.40.1"
                     },
                     {

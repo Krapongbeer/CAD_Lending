@@ -1,7 +1,7 @@
 -- ============================================================================
--- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.2.0 (Supabase / PostgreSQL)
+-- 🚀 Smart CAD Borrow & New Parcel System - Database Schema v2.3.0 (Supabase / PostgreSQL)
 -- Description: ระบบบริหารจัดการการยืม-คืนอุปกรณ์และครุภัณฑ์ใหม่ที่ยังไม่ได้รับเลขครุภัณฑ์
--- Security Hardened v2.2.0:
+-- Security Hardened v2.3.0:
 --   - Re-authenticated Administrative Procedures (Superadmin Password Validation Required)
 --   - Strict Granular RLS Policies (DENY DELETE on assets & borrow_transactions for Public/Anon)
 --   - Immutable Append-Only Audit Trail (DENY UPDATE/DELETE on audit_logs)
@@ -239,9 +239,18 @@ CREATE POLICY "Public update access on borrow_transactions"
     USING (true) 
     WITH CHECK (true);
 
--- ⛔ STRICTLY DENY DELETE (ป้องกันการสั่งลบข้อมูลผ่าน REST API):
--- ไม่อนุญาตให้ Anon หรือ Authenticated ส่งคำขอ DELETE ตาราง assets หรือ borrow_transactions ได้เด็ดขาด
--- เฉพาะ service_role (Admin Backend) เท่านั้นที่มีสิทธิ์ลบข้อมูลได้ (ตาม Policy ด้านบน)
+-- ⛔ STRICTLY DENY DELETE (RESTRICTIVE POLICY v2.3.0):
+-- บังคับเชิงลบแบบ Restrictive ไม่อนุญาตให้ Anon หรือ Authenticated ส่งคำขอ DELETE ตาราง assets หรือ borrow_transactions ได้เด็ดขาด
+-- แม้ในอนาคตจะมีนโยบาย Permissive อื่นถูกเพิ่มขึ้นมา นโยบาย Restrictive นี้จะบล็อกการ DELETE เสมอ 100%
+CREATE POLICY "Strictly deny delete on assets for public" 
+    ON assets AS RESTRICTIVE FOR DELETE 
+    TO anon, authenticated 
+    USING (false);
+
+CREATE POLICY "Strictly deny delete on borrow_transactions for public" 
+    ON borrow_transactions AS RESTRICTIVE FOR DELETE 
+    TO anon, authenticated 
+    USING (false);
 
 -- ============================================================================
 -- 9. ข้อมูลจำลองเริ่มต้น (Seed Data ตัวอย่างสำหรับการทดสอบระบบ)
@@ -513,6 +522,17 @@ CREATE POLICY "Full access for service role on audit_logs"
     USING (true) 
     WITH CHECK (true);
 
+-- 🛡️ บล็อก UPDATE และ DELETE บน audit_logs สำหรับ Anon/Public 100% ป้องกันการทำลายประวัติ
+CREATE POLICY "Strictly deny delete on audit_logs for public" 
+    ON audit_logs AS RESTRICTIVE FOR DELETE 
+    TO anon, authenticated 
+    USING (false);
+
+CREATE POLICY "Strictly deny update on audit_logs for public" 
+    ON audit_logs AS RESTRICTIVE FOR UPDATE 
+    TO anon, authenticated 
+    USING (false);
+
 -- นโยบายและฟังก์ชันล้างประวัติที่เก่ากว่า 90 วันอัตโนมัติ (90-Day Auto Retention Cleaner)
 CREATE OR REPLACE FUNCTION purge_audit_logs_older_than_90_days()
 RETURNS INTEGER AS $$
@@ -561,7 +581,7 @@ FROM system_users;
 
 GRANT SELECT ON view_system_users TO anon, authenticated;
 
--- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.1.1)
+-- 12.3 เพิ่มผู้ใช้งานใหม่พร้อม Bcrypt Hashing (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.3.0)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_admin_username TEXT,
     p_admin_password TEXT,
@@ -572,7 +592,11 @@ CREATE OR REPLACE FUNCTION admin_create_user(
     p_department TEXT DEFAULT 'กองบริหารงานกลาง',
     p_email TEXT DEFAULT NULL
 )
-RETURNS JSONB AS $$
+RETURNS JSONB 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     v_admin RECORD;
     v_clean_user TEXT;
@@ -639,17 +663,21 @@ BEGIN
 
     RETURN jsonb_build_object('success', true, 'message', 'สร้างผู้ใช้งานและซิงก์ลง Supabase สำเร็จ');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 GRANT EXECUTE ON FUNCTION admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.1.1)
+-- 12.4 ลบผู้ใช้งาน (เฉพาะ Superadmin พร้อมยืนยันรหัสผ่าน v2.3.0)
 CREATE OR REPLACE FUNCTION admin_delete_user(
     p_admin_username TEXT,
     p_admin_password TEXT,
     p_target_username TEXT
 )
-RETURNS JSONB AS $$
+RETURNS JSONB 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     v_admin RECORD;
     v_clean_target TEXT;
@@ -701,14 +729,18 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION admin_delete_user(TEXT, TEXT, TEXT) TO anon, authenticated;
 
--- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended พร้อมยืนยันรหัสผ่าน v2.1.1)
+-- 12.5 เปิด/ปิดสถานะผู้ใช้งาน (Active / Suspended พร้อมยืนยันรหัสผ่าน v2.3.0)
 CREATE OR REPLACE FUNCTION admin_toggle_user_status(
     p_admin_username TEXT,
     p_admin_password TEXT,
     p_target_username TEXT,
     p_is_active BOOLEAN
 )
-RETURNS JSONB AS $$
+RETURNS JSONB 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
 DECLARE
     v_admin RECORD;
     v_clean_target TEXT;
@@ -758,14 +790,14 @@ BEGIN
 
     RETURN jsonb_build_object('success', true, 'message', 'อัปเดตสถานะสำเร็จ');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 GRANT EXECUTE ON FUNCTION admin_toggle_user_status(TEXT, TEXT, TEXT, BOOLEAN) TO anon, authenticated;
 
--- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.2.0)
+-- บันทึกข้อมูลเริ่มต้น (System Initial Audit Log v2.3.0)
 INSERT INTO audit_logs (username, user_role, action, target_type, target_id, details)
 VALUES 
-    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.2.0', 'ระบบ SmartCAD-Lending v2.2.0 อัปเกรดระบบ Auto Drive Image Resolver เชื่อมต่อ AppSheet Google Drive CDN และระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ'),
-    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.2.0', 'เปิดใช้งานระบบยืนยันสิทธิ์ Re-authentication รหัสผ่าน Superadmin และบล็อกการลบฐานข้อมูลสำหรับบุคคลภายนอก 100%');
+    ('system', 'superadmin', 'SYSTEM_INIT', 'DATABASE', 'v2.3.0', 'ระบบ SmartCAD-Lending v2.3.0 อัปเกรดระบบ Auto Drive Image Resolver เชื่อมต่อ AppSheet Google Drive CDN และระบบ Dual Keep-Alive ป้องกันฐานข้อมูลหลับ'),
+    ('superadmin', 'superadmin', 'SECURITY_HARDENING', 'DATABASE', 'v2.3.0', 'เปิดใช้งานระบบ Restrictive Deny Delete RLS และ PostgreSQl search_path Hardening เพื่อความปลอดภัยระดับองค์กรสูงสุด');
 
 

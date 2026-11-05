@@ -16,16 +16,17 @@
    - สร้างตาราง `assets` และ `borrow_transactions` พร้อม Index & Constraint ครบถ้วน
    - สร้าง Trigger สำหรับ Auto-Sync สถานะยืม-คืนอัตโนมัติ
    - สร้าง View สรุปข้อมูลสำหรับหน้า Dashboard และ View สำหรับส่งต่อ (Handoff) ไปยัง CAD-Inventory
-   - **🛡️ Enterprise Security & Authentication (สถาปัตยกรรมความปลอดภัยระดับองค์กร v2.2.0 Hardened):**
+   - **🛡️ Enterprise Security & Authentication (สถาปัตยกรรมความปลอดภัยระดับองค์กร v2.3.0 Hardened):**
      - เปิดใช้งาน Extension `pgcrypto` สำหรับคำนวณ Bcrypt Hash บน Database Engine
      - สร้างตาราง `system_users` พร้อม Row Level Security (RLS) บล็อกการอ่านและแก้ไขจาก Public 100%
-     - **Superadmin Re-authentication**: Stored Procedures สำหรับจัดการระบบ (`admin_create_user`, `admin_delete_user`, `admin_toggle_user_status`) บังคับตรวจสอบรหัสผ่านจริงของ Superadmin ทุกครั้ง ป้องกันการปลอมแปลงสิทธิ์ (Authorization Bypass)
-     - **Strict Row-Level Security (RLS)**: ปิดกั้นสิทธิ์ `DELETE` บนตาราง `assets` และ `borrow_transactions` สำหรับผู้ใช้ทั่วไปโดยเด็ดขาด ป้องกันการสั่งล้างข้อมูลผ่าน REST API
+     - **Superadmin Re-authentication**: Stored Procedures สำหรับจัดการระบบ (`admin_create_user`, `admin_delete_user`, `admin_toggle_user_status`) บังคับตรวจสอบรหัสผ่านจริงของ Superadmin ทุกครั้ง พร้อมตั้งค่า `SET search_path = public, extensions` ป้องกันการปลอมแปลงสิทธิ์ (Authorization Bypass & Search Path Hijacking CWE-426)
+     - **Strict Row-Level Security (RLS)**: ปิดกั้นสิทธิ์ `DELETE` บนตาราง `assets` และ `borrow_transactions` ด้วย Restrictive Deny Policy สำหรับผู้ใช้ทั่วไปโดยเด็ดขาด ป้องกันการสั่งลบข้อมูลผ่าน REST API
      - **Immutable Append-Only Audit Trail**: ตาราง `audit_logs` อนุญาตเฉพาะ `SELECT` และ `INSERT` ปิดกั้น `UPDATE` และ `DELETE` 100% ป้องกันการทำลายหลักฐานประวัติระบบ
      - **Database-Level Brute-force Protection**: ตาราง `login_attempts` ติดตามการพยายามล็อกอินผิด หากผิดเกิน 5 ครั้งภายใน 15 นาที ระบบจะระงับการล็อกอินอัตโนมัติ 15 นาที พร้อมแจ้งเตือนลง Security Audit Log
      - **Universal XSS Protection**: หน้าเว็บผ่านการ Sanitized ข้อมูลอินพุตทุกฟิลด์ด้วย `escapeHtml()` ป้องกันการโจมตีแบบ Stored XSS 100%
      - **Webhook Security**: Google Apps Script และ Endpoint มีระบบตรวจสอบ `SYNC_TOKEN` ป้องกันการทริกเกอร์โดยไม่ได้รับอนุญาต (HTTP 401 Unauthorized)
      - ซิงก์บัญชีผู้ใช้งานเริ่มต้น (`superadmin`, `admin`, `staff`, `executive`) ด้วย Bcrypt Hash ตรงกับ CAD-Inventory 100%
+     - 💡 *สำหรับผู้ใช้ที่มีฐานข้อมูลเดิมอยู่แล้ว*: สามารถรันไฟล์ [`SECURITY_HARDENING_V2.3.0.sql`](./SECURITY_HARDENING_V2.3.0.sql) ใน Supabase SQL Editor เพื่ออัปเกรดระบบความปลอดภัยได้ทันทีโดยไม่กระทบข้อมูลเดิม
    - **📜 Enterprise Audit Logging System (นโยบายจัดเก็บประวัติ 90 วันตามมาตรฐานสากล):**
      - สร้างตาราง `audit_logs` พร้อม RLS และ Index ความเร็วสูงสำหรับจัดเก็บบันทึกประวัติ (Audit Trail)
      - นโยบายจัดเก็บและตรวจสอบประวัติย้อนหลัง 90 วัน พร้อมฟังก์ชัน Auto-Purge (`purge_audit_logs_older_than_90_days`)
