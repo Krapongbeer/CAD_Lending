@@ -2,34 +2,50 @@ name: Supabase Keep-Alive Ping (Prevent Inactivity Pause)
 
 on:
   schedule:
-    # รันอัตโนมัติทุกวัน เวลา 04:00 UTC (11:00 น. เวลาไทย) เพื่อไม่ให้ฐานข้อมูลหยุดทำงาน
-    - cron: '0 4 * * *'
-  workflow_dispatch: # อนุญาตให้กดสั่ง Ping ด้วยมือได้ตลอดเวลาจาก GitHub Actions
+    # รันอัตโนมัติวันละ 2 รอบ เวลา 04:00 UTC (11:00 น.) และ 16:00 UTC (23:00 น. เวลาไทย)
+    # เพื่อกระตุ้นฐานข้อมูล Supabase ต่อเนื่อง ป้องกันการถูกสั่งพัก (Paused) ถาวร
+    - cron: '0 4,16 * * *'
+  workflow_dispatch: # อนุญาตให้กดสั่ง Ping ด้วยมือได้ตลอดเวลาจาก GitHub Actions Tab
 
 jobs:
   keep-alive:
-    name: Ping Supabase Database
+    name: Ping Supabase Database Engine
     runs-on: ubuntu-latest
     steps:
-      - name: Send Daily Keep-Alive Ping to Supabase Database Engine
+      - name: Send Multi-Endpoint Keep-Alive Ping
         run: |
-          echo "🚀 Sending Daily Keep-Alive Ping to Supabase at $(date -u)"
+          echo "🚀 Sending Keep-Alive Signals to Supabase at $(date -u)"
           
-          # ส่งคำขอแบบ Bypass Cache เพื่อกระตุ้น PostgreSQL Engine ของ Supabase โดยตรง
+          SUPABASE_URL="https://undafgcijvuhvdmyjatk.supabase.co"
+          ANON_KEY="sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn"
+          
+          # 1. Ping ตาราง assets แบบ Bypass Cloudflare Cache
           STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "https://undafgcijvuhvdmyjatk.supabase.co/rest/v1/assets?select=asset_id&limit=1" \
-            -H "apikey: sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn" \
-            -H "Authorization: Bearer sb_publishable_WGFEQiopY91Fxi5o_-McKw_iwTRS5yn" \
+            -X GET "${SUPABASE_URL}/rest/v1/assets?select=asset_id&limit=1" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Authorization: Bearer ${ANON_KEY}" \
             -H "Cache-Control: no-cache, no-store, must-revalidate" \
             -H "Pragma: no-cache" \
             -H "User-Agent: GitHub-Actions-SmartCAD-KeepAlive/2.3.0")
           
-          echo "📡 HTTP Response Code: $STATUS_CODE"
+          echo "📡 [1/2] assets ping status: $STATUS_CODE"
+          
+          # 2. Ping วิว view_system_users เพื่อกระตุ้น PostgreSQL Query Engine
+          STATUS_CODE_VIEW=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${SUPABASE_URL}/rest/v1/view_system_users?select=username&limit=1" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Authorization: Bearer ${ANON_KEY}" \
+            -H "Cache-Control: no-cache, no-store, must-revalidate" \
+            -H "Pragma: no-cache" \
+            -H "User-Agent: GitHub-Actions-SmartCAD-KeepAlive/2.3.0")
+            
+          echo "📡 [2/2] view_system_users ping status: $STATUS_CODE_VIEW"
           
           if [ "$STATUS_CODE" -ge 200 ] && [ "$STATUS_CODE" -lt 300 ]; then
-            echo "✅ Supabase is ACTIVE and Keep-Alive signal was received successfully."
-          elif [ "$STATUS_CODE" -eq 522 ] || [ "$STATUS_CODE" -eq 503 ]; then
-            echo "⚠️ Supabase is currently PAUSED (Status: $STATUS_CODE). Please visit Supabase Dashboard and click 'Restore project'."
+            echo "✅ Supabase is ACTIVE and Database Engine received signals successfully."
+          elif [ "$STATUS_CODE" -eq 521 ] || [ "$STATUS_CODE" -eq 522 ] || [ "$STATUS_CODE" -eq 503 ]; then
+            echo "⚠️ Supabase is currently PAUSED (Status: $STATUS_CODE)."
+            echo "👉 Action Required: Visit https://supabase.com/dashboard/project/undafgcijvuhvdmyjatk and click 'Restore project'."
             exit 1
           else
             echo "⚠️ Unexpected status code: $STATUS_CODE"
